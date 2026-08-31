@@ -56,20 +56,7 @@ export default function AdminDashboard() {
             {/* Actions */}
             <div className="space-y-2 animate-fade-in" style={{ animationDelay: '100ms' }}>
               <h3 className="text-sm font-semibold text-text-secondary px-1">Управление</h3>
-              {pendingCount > 0 && (
-                <button
-                  onClick={() => navigate('/admin/moderation')}
-                  className="w-full flex items-center gap-3 p-4 rounded-xl bg-warning/5 border border-warning/20 text-left active:bg-surface-3 transition-colors"
-                >
-                  <span className="text-xl">📨</span>
-                  <div className="flex-1">
-                    <span className="text-sm font-medium">Модерация</span>
-                    <span className="ml-2 text-xs bg-warning/20 text-warning px-2 py-0.5 rounded-full">{pendingCount} новых</span>
-                  </div>
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-text-muted"><polyline points="9 18 15 12 9 6" /></svg>
-                </button>
-              )}
-              <ActionButton label="Модерация" icon="📨" onClick={() => navigate('/admin/moderation')} />
+              <ActionButton label="Модерация" icon="📨" onClick={() => navigate('/admin/moderation')} badge={pendingCount > 0 ? `${pendingCount} новых` : undefined} />
               <ActionButton label="Пользователи" icon="👤" onClick={() => navigate('/admin/users')} />
               <ActionButton label="Аккаунты" icon="🎮" onClick={() => navigate('/admin/accounts')} />
               <ActionButton label="Аренды" icon="⏱" onClick={() => navigate('/admin/rentals')} />
@@ -94,14 +81,15 @@ function StatCard({ label, value, icon, color }: { label: string; value: number 
   )
 }
 
-function ActionButton({ label, icon, onClick }: { label: string; icon: string; onClick: () => void }) {
+function ActionButton({ label, icon, onClick, badge }: { label: string; icon: string; onClick: () => void; badge?: string }) {
   return (
     <button
       onClick={onClick}
-      className="w-full flex items-center gap-3 p-4 rounded-xl bg-surface-2 border border-white/5 text-left active:bg-surface-3 transition-colors"
+      className={`w-full flex items-center gap-3 p-4 rounded-xl text-left active:bg-surface-3 transition-colors ${badge ? 'bg-warning/5 border border-warning/20' : 'bg-surface-2 border border-white/5'}`}
     >
       <span className="text-xl">{icon}</span>
       <span className="text-sm font-medium flex-1">{label}</span>
+      {badge && <span className="text-xs bg-warning/20 text-warning px-2 py-0.5 rounded-full">{badge}</span>}
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-text-muted">
         <polyline points="9 18 15 12 9 6" />
       </svg>

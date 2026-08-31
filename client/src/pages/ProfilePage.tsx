@@ -58,7 +58,8 @@ export default function ProfilePage() {
         {/* Stats */}
         <StatsCard user={user} />
 
-        {/* My Listings */}
+        {/* My Listings - hidden for admin */}
+        {!isAdmin && (
         <div className="animate-fade-in">
           <h3 className="text-sm font-semibold text-text-secondary mb-3 px-1">💼 Сдаю аккаунты</h3>
           <button
@@ -79,6 +80,7 @@ export default function ProfilePage() {
             ➕ Сдать аккаунт
           </button>
         </div>
+        )}
 
         {/* Admin Link */}
         {isAdmin && (

@@ -12,6 +12,7 @@ if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir, { recursive: true })
 const USERS_FILE = path.join(dataDir, 'users.json')
 const LISTINGS_FILE = path.join(dataDir, 'listings.json')
 const ORDERS_FILE = path.join(dataDir, 'orders.json')
+const ACCOUNTS_FILE = path.join(dataDir, 'accounts.json')
 
 const TOKEN = process.env.BOT_TOKEN || '8860618629:AAFvQJ39Vz9mLsC6VxRbz8INWJ1k8AU-mSQ'
 const ADMIN_ID = process.env.ADMIN_ID || '864525792'
@@ -111,6 +112,17 @@ app.post('/api/listings/:id/approve', (req, res) => {
   if (!l) return res.status(404).json({ error: 'Not found' })
   l.status = 'approved'; l.reviewed_at = new Date().toISOString()
   save(LISTINGS_FILE, listings)
+
+  // Add account to catalog
+  const accounts = load(ACCOUNTS_FILE)
+  accounts.push({
+    id: accounts.length ? Math.max(...accounts.map(a => a.id)) + 1 : 1,
+    game_id: l.game_id, title: l.title, description: l.description,
+    price_per_day: l.price_per_day, rank: l.rank, status: 'available',
+    owner_id: l.user_id, owner_type: 'user',
+  })
+  save(ACCOUNTS_FILE, accounts)
+
   bot.sendMessage(l.user_id, `✅ Аккаунт одобрен!\n\n🎮 ${l.game_name}\n💼 ${l.title}\n\nТеперь он доступен в каталоге.`).catch(() => {})
   res.json(l)
 })
@@ -145,6 +157,24 @@ app.post('/api/orders', (req, res) => {
   const order = { id: orders.length ? Math.max(...orders.map(o => o.id)) + 1 : 1, ...req.body, status: 'active', created_at: new Date().toISOString() }
   orders.push(order); save(ORDERS_FILE, orders)
   res.status(201).json(order)
+})
+
+// Accounts (catalog)
+app.get('/api/accounts', (req, res) => {
+  let accounts = load(ACCOUNTS_FILE)
+  if (req.query.game_id) accounts = accounts.filter(a => a.game_id === Number(req.query.game_id))
+  res.json(accounts)
+})
+
+app.post('/api/accounts', (req, res) => {
+  const accounts = load(ACCOUNTS_FILE)
+  const account = {
+    id: accounts.length ? Math.max(...accounts.map(a => a.id)) + 1 : 1,
+    ...req.body, status: req.body.status || 'available',
+  }
+  accounts.push(account)
+  save(ACCOUNTS_FILE, accounts)
+  res.status(201).json(account)
 })
 
 // Activity

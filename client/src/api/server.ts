@@ -94,6 +94,15 @@ export async function acceptTermsAPI(userId: string, version: string) {
   } catch {}
 }
 
+// ── Accounts API ──
+
+export async function fetchAccountsFromServer(gameId?: number): Promise<any[]> {
+  const url = gameId ? `${API_BASE}/accounts?game_id=${gameId}` : `${API_BASE}/accounts`
+  const res = await fetch(url)
+  if (!res.ok) return []
+  return res.json()
+}
+
 // ── Users API ──
 
 export async function fetchBotUsers(): Promise<any[]> {

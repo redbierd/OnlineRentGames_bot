@@ -13,7 +13,6 @@ export default function SubmitAccountWizard({ onClose }: { onClose?: () => void 
   const [step, setStep] = useState(0)
   const [games, setGames] = useState<Game[]>([])
   const [submitting, setSubmitting] = useState(false)
-  const [submitted, setSubmitted] = useState(false)
   const [error, setError] = useState('')
 
   const [gameId, setGameId] = useState<number | null>(null)
@@ -40,32 +39,12 @@ export default function SubmitAccountWizard({ onClose }: { onClose?: () => void 
         game_id: gameId, game_name: game?.name || '', title, description, extra_info: extraInfo,
         price_per_day: Number(pricePerDay), rank, login, password,
       })
-      setSubmitted(true)
+      navigate('/my-listings', { replace: true })
     } catch {
       setError('Не удалось отправить заявку. Попробуйте ещё раз.')
     } finally {
       setSubmitting(false)
     }
-  }
-
-  if (submitted) {
-    return (
-      <div className="flex-1 max-w-lg mx-auto w-full">
-        <Header title="Заявка отправлена" showBack />
-        <div className="flex flex-col items-center justify-center py-16 px-4 animate-slide-up">
-          <div className="w-16 h-16 rounded-full bg-warning/15 flex items-center justify-center mb-4">
-            <span className="text-3xl">📨</span>
-          </div>
-          <h2 className="text-xl font-bold mb-2">На модерации</h2>
-          <p className="text-sm text-text-secondary text-center mb-6 max-w-xs">
-            Аккаунт будет проверен модератором. После одобрения он появится в каталоге.
-          </p>
-          <button onClick={() => onClose ? onClose() : navigate('/profile')} className="px-6 py-3 rounded-xl bg-accent text-white text-sm font-semibold active:opacity-80">
-            Готово
-          </button>
-        </div>
-      </div>
-    )
   }
 
   return (
