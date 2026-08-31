@@ -1,8 +1,25 @@
 {
-  "name": "game-rent-app",
+  "name": "gamerent-client",
+  "private": true,
   "version": "1.0.0",
+  "type": "module",
   "scripts": {
-    "build": "cd client && npm install && npx vite build",
-    "start": "cd bot && node bot.js"
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8",
+    "react-router-dom": "^7.0.0"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "^4.3.3",
+    "@types/react": "^19.2.18",
+    "@types/react-dom": "^19.2.4",
+    "@vitejs/plugin-react": "^6.1.0",
+    "tailwindcss": "^4.3.3",
+    "typescript": "~6.0.2",
+    "vite": "^8.2.2"
   }
 }
