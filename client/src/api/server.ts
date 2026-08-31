@@ -157,3 +157,15 @@ export async function fetchGameStats(): Promise<Record<number, { total: number; 
   if (!res.ok) return {}
   return res.json()
 }
+
+// ── Password Update API ──
+
+export async function updateAccountPassword(accountId: number, userId: string, newPassword: string): Promise<any> {
+  const res = await fetch(`${API_BASE}/accounts/${accountId}/password`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ password: newPassword, owner_id: userId }),
+  })
+  if (!res.ok) throw new Error('Failed to update password')
+  return res.json()
+}

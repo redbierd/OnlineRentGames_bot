@@ -243,6 +243,7 @@ app.get('/api/my-accounts/:userId', (req, res) => {
 
     return {
       listing_id: listing.id,
+      game_id: listing.game_id,
       game_name: listing.game_name,
       title: listing.title,
       price_per_day: listing.price_per_day,
@@ -276,10 +277,18 @@ app.get('/api/games/stats', (req, res) => {
   res.json(stats)
 })
 
+// Game password change links
+const PASSWORD_LINKS = {
+  1: { name: 'Valorant', url: 'https://account.riotgames.com/', instruction: 'Войдите → Настройки → Пароль → Изменить пароль' },
+  2: { name: 'Fortnite', url: 'https://www.epicgames.com/account/password', instruction: 'Войдите → Изменить пароль' },
+  3: { name: 'CS2', url: 'https://store.steampowered.com/account/', instruction: 'Войдите → Управление аккаунтом → Изменить пароль' },
+}
+
 // Auto-release expired rentals (run periodically)
 function releaseExpiredRentals() {
   const orders = load(ORDERS_FILE)
   const accounts = load(ACCOUNTS_FILE)
+  const listings = load(LISTINGS_FILE)
   let changed = false
 
   orders.forEach(order => {
@@ -287,9 +296,18 @@ function releaseExpiredRentals() {
       order.status = 'completed'
       const account = accounts.find(a => a.id === order.account_id)
       if (account && account.owner_id) {
-        account.status = 'available'
+        account.status = 'password_update_needed'
+        changed = true
+
+        // Find listing for game info
+        const listing = listings.find(l => l.user_id === account.owner_id && l.game_id === account.game_id && l.title === account.title)
+        const gameInfo = PASSWORD_LINKS[account.game_id] || { name: listing?.game_name || 'Игра', url: '', instruction: 'Смените пароль от аккаунта' }
+
+        // Notify owner
+        const msg = `⚠️ АРЕНДА ЗАВЕРШЕНА\n\n🎮 ${gameInfo.name}\n💼 ${account.title}\n\n🔐 Необходимо сменить пароль!\n\nПредыдущий арендатор всё ещё может иметь доступ к аккаунту. Смените пароль как можно скорее.\n\n🔗 Ссылка для смены:\n${gameInfo.url}\n\n📝 Инструкция:\n${gameInfo.instruction}\n\nПосле смены пароля обновите его в разделе «Мои аккаунты» в приложении.`
+
+        bot.sendMessage(account.owner_id, msg).catch(() => {})
       }
-      changed = true
     }
   })
 
@@ -301,6 +319,31 @@ function releaseExpiredRentals() {
 
 // Check every minute
 setInterval(releaseExpiredRentals, 60000)
+
+// Update password for account
+app.post('/api/accounts/:id/password', (req, res) => {
+  const { password, owner_id } = req.body
+  if (!password || !owner_id) return res.status(400).json({ error: 'Missing fields' })
+
+  const accounts = load(ACCOUNTS_FILE)
+  const account = accounts.find(a => a.id === Number(req.params.id))
+  if (!account) return res.status(404).json({ error: 'Account not found' })
+  if (account.owner_id !== String(owner_id)) return res.status(403).json({ error: 'Not your account' })
+
+  // Update credentials in listings
+  const listings = load(LISTINGS_FILE)
+  const listing = listings.find(l => l.user_id === String(owner_id) && l.game_id === account.game_id && l.title === account.title)
+  if (listing) {
+    listing.credentials.password = password
+    save(LISTINGS_FILE, listings)
+  }
+
+  // Re-enable account
+  account.status = 'available'
+  save(ACCOUNTS_FILE, accounts)
+
+  res.json({ ok: true, account_status: 'available' })
+})
 
 // Activity
 app.post('/api/activity', (req, res) => {

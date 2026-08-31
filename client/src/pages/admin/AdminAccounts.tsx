@@ -89,8 +89,8 @@ export default function AdminAccounts() {
                     <p className="text-sm font-semibold">{acc.title}</p>
                     <p className="text-xs text-text-muted">{acc.rank} · {acc.price_per_day}₽/день</p>
                   </div>
-                  <span className={`text-[10px] font-medium px-2 py-0.5 rounded-full ${acc.status === 'available' ? 'text-success bg-success/10' : 'text-danger bg-danger/10'}`}>
-                    {acc.status === 'available' ? '🟢 Свободен' : '🔴 В аренде'}
+                  <span className={`text-[10px] font-medium px-2 py-0.5 rounded-full ${acc.status === 'available' ? 'text-success bg-success/10' : acc.status === 'password_update_needed' ? 'text-warning bg-warning/10' : 'text-danger bg-danger/10'}`}>
+                    {acc.status === 'available' ? '🟢 Свободен' : acc.status === 'password_update_needed' ? '🔐 Смена пароля' : '🔴 В аренде'}
                   </span>
                 </div>
                 <div className="flex gap-2">
