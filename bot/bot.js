@@ -228,6 +228,80 @@ app.post('/api/admin/orders', (req, res) => {
   res.status(201).json(order)
 })
 
+// User's listed accounts with rental info
+app.get('/api/my-accounts/:userId', (req, res) => {
+  const userId = String(req.params.userId)
+  const listings = load(LISTINGS_FILE).filter(l => l.user_id === userId && l.status === 'approved')
+  const accounts = load(ACCOUNTS_FILE)
+  const orders = load(ORDERS_FILE)
+
+  const result = listings.map(listing => {
+    const account = accounts.find(a => a.owner_id === userId && a.title === listing.title && a.game_id === listing.game_id)
+    const activeOrder = account ? orders.find(o => o.account_id === account.id && o.status === 'active') : null
+    const completedOrders = account ? orders.filter(o => o.account_id === account.id && o.status === 'completed') : []
+    const totalIncome = completedOrders.reduce((sum, o) => sum + (o.total_price || 0), 0)
+
+    return {
+      listing_id: listing.id,
+      game_name: listing.game_name,
+      title: listing.title,
+      price_per_day: listing.price_per_day,
+      rank: listing.rank,
+      account_id: account?.id || null,
+      account_status: account?.status || 'unknown',
+      is_rented: !!activeOrder,
+      current_order: activeOrder ? {
+        id: activeOrder.id,
+        username: activeOrder.username,
+        expires_at: activeOrder.expires_at,
+        total_price: activeOrder.total_price,
+      } : null,
+      total_rentals: completedOrders.length + (activeOrder ? 1 : 0),
+      total_income: totalIncome + (activeOrder ? activeOrder.total_price : 0),
+    }
+  })
+
+  res.json(result)
+})
+
+// Game stats (available accounts count)
+app.get('/api/games/stats', (req, res) => {
+  const accounts = load(ACCOUNTS_FILE)
+  const stats = {}
+  accounts.forEach(a => {
+    if (!stats[a.game_id]) stats[a.game_id] = { total: 0, available: 0 }
+    stats[a.game_id].total++
+    if (a.status === 'available') stats[a.game_id].available++
+  })
+  res.json(stats)
+})
+
+// Auto-release expired rentals (run periodically)
+function releaseExpiredRentals() {
+  const orders = load(ORDERS_FILE)
+  const accounts = load(ACCOUNTS_FILE)
+  let changed = false
+
+  orders.forEach(order => {
+    if (order.status === 'active' && new Date(order.expires_at) < new Date()) {
+      order.status = 'completed'
+      const account = accounts.find(a => a.id === order.account_id)
+      if (account && account.owner_id) {
+        account.status = 'available'
+      }
+      changed = true
+    }
+  })
+
+  if (changed) {
+    save(ORDERS_FILE, orders)
+    save(ACCOUNTS_FILE, accounts)
+  }
+}
+
+// Check every minute
+setInterval(releaseExpiredRentals, 60000)
+
 // Activity
 app.post('/api/activity', (req, res) => {
   const { user_id, field } = req.body

@@ -141,3 +141,19 @@ export async function adminCreateOrderOnServer(userId: string, accountId: number
   }
   return res.json()
 }
+
+// ── My Accounts API ──
+
+export async function fetchMyAccounts(userId: string): Promise<any[]> {
+  const res = await fetch(`${API_BASE}/my-accounts/${userId}`)
+  if (!res.ok) return []
+  return res.json()
+}
+
+// ── Game Stats API ──
+
+export async function fetchGameStats(): Promise<Record<number, { total: number; available: number }>> {
+  const res = await fetch(`${API_BASE}/games/stats`)
+  if (!res.ok) return {}
+  return res.json()
+}
