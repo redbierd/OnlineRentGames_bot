@@ -1,14 +1,24 @@
+import { useEffect, useState } from 'react'
 import type { Game } from '../types'
 import { useFavorites } from '../hooks/useFavorites'
+import { fetchGameStats } from '../api/server'
 
 const GAME_ICONS: Record<string, string> = {
-  valorant: '🎯',
-  fortnite: '🪂',
-  cs2: '💥',
+  valorant: '🎯', fortnite: '🪂', cs2: '💥',
 }
+
+interface GameStat { total: number; available: number; min_price: number }
 
 export default function GameCard({ game, onClick }: { game: Game; onClick: () => void }) {
   const { isFav, toggle } = useFavorites()
+  const [stat, setStat] = useState<GameStat | null>(null)
+
+  useEffect(() => {
+    fetchGameStats().then(s => setStat(s[game.id] || null)).catch(() => {})
+  }, [game.id])
+
+  const available = stat?.available ?? 0
+  const minPrice = stat?.min_price ?? 0
 
   return (
     <button
@@ -32,7 +42,11 @@ export default function GameCard({ game, onClick }: { game: Game; onClick: () =>
         </button>
         <div className="text-3xl mb-2">{GAME_ICONS[game.slug] || '🎮'}</div>
         <h3 className="text-lg font-bold">{game.name}</h3>
-        <p className="text-xs text-text-secondary mt-0.5">{game.accounts_count} аккаунтов доступно</p>
+        {available > 0 ? (
+          <p className="text-xs text-text-secondary mt-0.5">{available} аккаунтов · от {minPrice}₽/день</p>
+        ) : (
+          <p className="text-xs text-text-muted mt-0.5">Нет в наличии</p>
+        )}
       </div>
     </button>
   )

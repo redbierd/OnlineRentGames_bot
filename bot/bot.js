@@ -265,15 +265,20 @@ app.get('/api/my-accounts/:userId', (req, res) => {
   res.json(result)
 })
 
-// Game stats (available accounts count)
+// Game stats (available accounts count + min price)
 app.get('/api/games/stats', (req, res) => {
   const accounts = load(ACCOUNTS_FILE)
   const stats = {}
   accounts.forEach(a => {
-    if (!stats[a.game_id]) stats[a.game_id] = { total: 0, available: 0 }
+    if (!stats[a.game_id]) stats[a.game_id] = { total: 0, available: 0, min_price: Infinity }
     stats[a.game_id].total++
-    if (a.status === 'available') stats[a.game_id].available++
+    if (a.status === 'available') {
+      stats[a.game_id].available++
+      if (a.price_per_day < stats[a.game_id].min_price) stats[a.game_id].min_price = a.price_per_day
+    }
   })
+  // Set min_price to 0 if no available accounts
+  Object.values(stats).forEach(s => { if (s.min_price === Infinity) s.min_price = 0 })
   res.json(stats)
 })
 
