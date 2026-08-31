@@ -1,6 +1,6 @@
 import { ADMIN_TELEGRAM_ID } from '../config'
 import type { Game, Account, Order, UserProfile, ListingApplication, ListingStatus } from '../types'
-import { fetchBotUsers } from './server'
+import { fetchBotUsers, updateUserLevel, adminCreateOrderOnServer, fetchAccountsFromServer } from './server'
 
 // ── Bot user type ──
 
@@ -112,12 +112,7 @@ export async function adminGetUser(adminId: string, userId: string): Promise<Bot
 
 export async function adminUpdateUserLevel(adminId: string, userId: string, level: number): Promise<BotUser> {
   requireAdmin(adminId)
-  const user = _botUsers.find(u => u.id === userId)
-  if (!user) throw new Error('User not found')
-  const oldLevel = user.level
-  user.level = level
-  log(adminId, 'change_level', `user:${userId}`, `${oldLevel} → ${level}`)
-  return { ...user }
+  return updateUserLevel(userId, level)
 }
 
 export async function adminGetUserOrders(adminId: string, userId: string): Promise<Order[]> {
@@ -134,38 +129,7 @@ export async function adminGetOrders(adminId: string): Promise<Order[]> {
 
 export async function adminCreateOrder(adminId: string, data: { userId: string; accountId: number; hours: number }): Promise<Order> {
   requireAdmin(adminId)
-  const account = _accounts.find(a => a.id === data.accountId)
-  if (!account) throw new Error('Account not found')
-  if (account.status === 'rented') throw new Error('Account already rented')
-
-  const user = _users.find(u => u.id === data.userId)
-  const game = _games.find(g => g.id === account.game_id)
-  if (!game) throw new Error('Game not found')
-
-  const pricePerHour = account.price_per_day / 24
-  const totalPrice = Math.ceil(pricePerHour * data.hours)
-
-  const order: Order = {
-    id: Math.max(0, ..._orders.map(o => o.id)) + 1,
-    account_id: account.id,
-    game_id: game.id,
-    game_name: game.name,
-    game_slug: game.slug,
-    account_title: account.title,
-    user_id: data.userId,
-    username: user?.username || '',
-    rental_days: Math.ceil(data.hours / 24),
-    total_price: totalPrice,
-    status: 'active',
-    created_at: new Date().toISOString(),
-    expires_at: new Date(Date.now() + data.hours * 3600000).toISOString(),
-    credentials: { login: `acc_${account.id}_login`, password: `pass_${account.id}_$ecure` },
-  }
-
-  _orders.push(order)
-  account.status = 'rented'
-  log(adminId, 'create_rental', `order:${order.id}`, `user:${data.userId} account:${data.accountId} ${data.hours}h`)
-  return { ...order }
+  return adminCreateOrderOnServer(data.userId, data.accountId, data.hours)
 }
 
 export async function adminExtendOrder(adminId: string, orderId: number, hours: number): Promise<Order> {
@@ -204,7 +168,7 @@ export async function adminCompleteOrder(adminId: string, orderId: number): Prom
 
 export async function adminGetAccounts(adminId: string): Promise<Account[]> {
   requireAdmin(adminId)
-  return [..._accounts]
+  return fetchAccountsFromServer()
 }
 
 export async function adminCreateAccount(adminId: string, data: Omit<Account, 'id'>): Promise<Account> {

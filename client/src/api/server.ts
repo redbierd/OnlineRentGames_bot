@@ -103,10 +103,41 @@ export async function fetchAccountsFromServer(gameId?: number): Promise<any[]> {
   return res.json()
 }
 
+export async function fetchAccountFromServer(id: number): Promise<any | null> {
+  const res = await fetch(`${API_BASE}/accounts/${id}`)
+  if (!res.ok) return null
+  return res.json()
+}
+
 // ── Users API ──
 
 export async function fetchBotUsers(): Promise<any[]> {
   const res = await fetch(`${API_BASE}/users`)
   if (!res.ok) return []
+  return res.json()
+}
+
+export async function updateUserLevel(userId: string, level: number): Promise<any> {
+  const res = await fetch(`${API_BASE}/users/${userId}/level`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ level }),
+  })
+  if (!res.ok) throw new Error('Failed to update level')
+  return res.json()
+}
+
+// ── Admin Orders API ──
+
+export async function adminCreateOrderOnServer(userId: string, accountId: number, hours: number): Promise<any> {
+  const res = await fetch(`${API_BASE}/admin/orders`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ user_id: userId, account_id: accountId, hours }),
+  })
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}))
+    throw new Error(err.error || 'Failed to create order')
+  }
   return res.json()
 }

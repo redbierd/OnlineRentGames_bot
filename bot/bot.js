@@ -166,6 +166,11 @@ app.get('/api/accounts', (req, res) => {
   res.json(accounts)
 })
 
+app.get('/api/accounts/:id', (req, res) => {
+  const account = load(ACCOUNTS_FILE).find(a => a.id === Number(req.params.id))
+  account ? res.json(account) : res.status(404).json({ error: 'Not found' })
+})
+
 app.post('/api/accounts', (req, res) => {
   const accounts = load(ACCOUNTS_FILE)
   const account = {
@@ -175,6 +180,52 @@ app.post('/api/accounts', (req, res) => {
   accounts.push(account)
   save(ACCOUNTS_FILE, accounts)
   res.status(201).json(account)
+})
+
+// User level update
+app.post('/api/users/:id/level', (req, res) => {
+  const { level } = req.body
+  if (level === undefined) return res.status(400).json({ error: 'Missing level' })
+  const users = load(USERS_FILE)
+  const user = users.find(u => u.id === String(req.params.id))
+  if (!user) return res.status(404).json({ error: 'User not found' })
+  user.level = Number(level)
+  save(USERS_FILE, users)
+  res.json(user)
+})
+
+// Admin create order (grant rental)
+app.post('/api/admin/orders', (req, res) => {
+  const { user_id, account_id, hours } = req.body
+  if (!user_id || !account_id || !hours) return res.status(400).json({ error: 'Missing fields' })
+
+  const accounts = load(ACCOUNTS_FILE)
+  const account = accounts.find(a => a.id === Number(account_id))
+  if (!account) return res.status(404).json({ error: 'Account not found' })
+  if (account.status === 'rented') return res.status(400).json({ error: 'Account already rented' })
+
+  const pricePerHour = account.price_per_day / 24
+  const totalPrice = Math.ceil(pricePerHour * hours)
+
+  const orders = load(ORDERS_FILE)
+  const order = {
+    id: orders.length ? Math.max(...orders.map(o => o.id)) + 1 : 1,
+    account_id: Number(account_id), game_id: account.game_id,
+    game_name: '', game_slug: '', account_title: account.title,
+    user_id: String(user_id), username: '', rental_days: Math.ceil(hours / 24),
+    total_price: totalPrice, status: 'active',
+    created_at: new Date().toISOString(),
+    expires_at: new Date(Date.now() + hours * 3600000).toISOString(),
+    credentials: { login: `acc_${account.id}_login`, password: `pass_${account.id}_$ecure` },
+  }
+  orders.push(order)
+  save(ORDERS_FILE, orders)
+
+  // Mark account as rented
+  account.status = 'rented'
+  save(ACCOUNTS_FILE, accounts)
+
+  res.status(201).json(order)
 })
 
 // Activity
