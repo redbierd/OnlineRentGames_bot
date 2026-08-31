@@ -1,0 +1,8 @@
+{
+  "name": "game-rent-app",
+  "version": "1.0.0",
+  "scripts": {
+    "build": "cd client && npm install && npx vite build",
+    "start": "cd bot && node bot.js"
+  }
+}

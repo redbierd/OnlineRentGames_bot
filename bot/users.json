@@ -1,0 +1,32 @@
+[
+  {
+    "id": "7603454342",
+    "first_name": "Павел",
+    "last_name": "Шестаков",
+    "username": "PSALFABANK",
+    "photo_url": "",
+    "registered_at": "2026-08-31T14:40:14.092Z",
+    "last_seen": "2026-08-31T14:48:46.428Z",
+    "start_count": 5,
+    "opened_miniapp": false,
+    "accepted_terms": false,
+    "browsed_menu": false,
+    "time_in_app_seconds": 0,
+    "level": 1
+  },
+  {
+    "id": "864525792",
+    "first_name": "R🐍",
+    "last_name": "",
+    "username": "fzhhhhx",
+    "photo_url": "",
+    "registered_at": "2026-08-31T14:47:57.676Z",
+    "last_seen": "2026-08-31T14:47:57.676Z",
+    "start_count": 1,
+    "opened_miniapp": false,
+    "accepted_terms": false,
+    "browsed_menu": false,
+    "time_in_app_seconds": 0,
+    "level": 1
+  }
+]

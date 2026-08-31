@@ -1,0 +1,14 @@
+services:
+  - type: web
+    name: gamerent-bot
+    runtime: node
+    buildCommand: npm run build
+    startCommand: npm start
+    envVars:
+      - key: BOT_TOKEN
+        value: 8860618629:AAFvQJ39Vz9mLsC6VxRbz8INWJ1k8AU-mSQ
+      - key: ADMIN_ID
+        value: "864525792"
+      - key: BASE_URL
+        sync: false
+    plan: free
