@@ -152,9 +152,48 @@ export async function fetchMyAccounts(userId: string): Promise<any[]> {
 
 // ── Game Stats API ──
 
-export async function fetchGameStats(): Promise<Record<number, { total: number; available: number }>> {
+export async function fetchGameStats(): Promise<Record<number, { total: number; available: number; min_price: number }>> {
   const res = await fetch(`${API_BASE}/games/stats`)
   if (!res.ok) return {}
+  return res.json()
+}
+
+// ── Rental Requests API ──
+
+export async function createRentalRequest(requesterId: string, requesterUsername: string, accountId: number, hours: number): Promise<any> {
+  const res = await fetch(`${API_BASE}/rental-requests`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ requester_id: requesterId, requester_username: requesterUsername, account_id: accountId, hours }),
+  })
+  if (!res.ok) throw new Error('Failed to create request')
+  return res.json()
+}
+
+export async function fetchRentalRequests(userId?: string, status?: string): Promise<any[]> {
+  let url = `${API_BASE}/rental-requests`
+  const params = []
+  if (userId) params.push(`user_id=${userId}`)
+  if (status) params.push(`status=${status}`)
+  if (params.length) url += '?' + params.join('&')
+  const res = await fetch(url)
+  if (!res.ok) return []
+  return res.json()
+}
+
+export async function approveRentalRequest(requestId: number): Promise<any> {
+  const res = await fetch(`${API_BASE}/rental-requests/${requestId}/approve`, { method: 'POST' })
+  if (!res.ok) throw new Error('Failed to approve')
+  return res.json()
+}
+
+export async function rejectRentalRequest(requestId: number, reason: string): Promise<any> {
+  const res = await fetch(`${API_BASE}/rental-requests/${requestId}/reject`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ reason }),
+  })
+  if (!res.ok) throw new Error('Failed to reject')
   return res.json()
 }
 

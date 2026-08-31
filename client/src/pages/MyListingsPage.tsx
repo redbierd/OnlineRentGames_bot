@@ -189,7 +189,7 @@ export default function MyListingsPage() {
           </div>
         ) : (
           <>
-            {/* Active accounts */}
+            {/* Active accounts - owner view */}
             {accounts.filter(a => a.account_status !== 'password_update_needed').map(acc => (
               <div key={acc.listing_id} className="rounded-xl bg-surface-2 border border-white/5 overflow-hidden animate-fade-in">
                 <div className="p-4">
@@ -197,20 +197,12 @@ export default function MyListingsPage() {
                     <div>
                       <p className="text-xs text-text-muted">{acc.game_name}</p>
                       <p className="text-sm font-semibold">{acc.title}</p>
-                      <p className="text-xs text-accent">{acc.price_per_day}₽/день · {acc.rank}</p>
+                      <p className="text-xs text-accent">{Math.ceil(acc.price_per_day / 24)}₽/час · {acc.rank}</p>
                     </div>
-                    <span className={`text-[10px] font-medium px-2 py-0.5 rounded-full ${acc.is_rented ? 'text-success bg-success/10' : 'text-accent bg-accent/10'}`}>
-                      {acc.is_rented ? '🟢 В аренде' : '🔵 Свободен'}
+                    <span className={`text-[10px] font-medium px-2 py-0.5 rounded-full ${acc.account_status === 'available' ? 'text-success bg-success/10' : 'text-accent bg-accent/10'}`}>
+                      {acc.account_status === 'available' ? '🟢 В каталоге' : '🔵 Активен'}
                     </span>
                   </div>
-
-                  {acc.is_rented && acc.current_order && (
-                    <div className="bg-surface-3 rounded-lg p-3 mb-2">
-                      <p className="text-xs text-text-muted">Арендатор</p>
-                      <p className="text-sm font-medium">@{acc.current_order.username || '—'}</p>
-                      <p className="text-xs text-text-muted mt-1">До: {new Date(acc.current_order.expires_at).toLocaleString('ru-RU')}</p>
-                    </div>
-                  )}
 
                   <div className="flex gap-4 text-xs">
                     <div><span className="text-text-muted">Аренд: </span><span className="font-medium">{acc.total_rentals}</span></div>

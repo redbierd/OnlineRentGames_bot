@@ -56,7 +56,8 @@ export default function AdminDashboard() {
             {/* Actions */}
             <div className="space-y-2 animate-fade-in" style={{ animationDelay: '100ms' }}>
               <h3 className="text-sm font-semibold text-text-secondary px-1">Управление</h3>
-              <ActionButton label="Модерация" icon="📨" onClick={() => navigate('/admin/moderation')} badge={pendingCount > 0 ? `${pendingCount} новых` : undefined} />
+              <ActionButton label="Модерация аккаунтов" icon="📨" onClick={() => navigate('/admin/moderation')} badge={pendingCount > 0 ? `${pendingCount} новых` : undefined} />
+              <ActionButton label="Заявки на аренду" icon="📋" onClick={() => navigate('/admin/rental-requests')} />
               <ActionButton label="Пользователи" icon="👤" onClick={() => navigate('/admin/users')} />
               <ActionButton label="Аккаунты" icon="🎮" onClick={() => navigate('/admin/accounts')} />
               <ActionButton label="Аренды" icon="⏱" onClick={() => navigate('/admin/rentals')} />

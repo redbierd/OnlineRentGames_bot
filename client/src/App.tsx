@@ -22,6 +22,7 @@ import AdminRentals from './pages/admin/AdminRentals'
 import AdminGames from './pages/admin/AdminGames'
 import AdminModeration from './pages/admin/AdminModeration'
 import AdminListingDetail from './pages/admin/AdminListingDetail'
+import AdminRentalRequests from './pages/admin/AdminRentalRequests'
 
 function ActivityTracker() {
   const location = useLocation()
@@ -69,6 +70,7 @@ export default function App() {
         <Route path="/admin/games" element={<AdminRoute><AdminGames /></AdminRoute>} />
         <Route path="/admin/moderation" element={<AdminRoute><AdminModeration /></AdminRoute>} />
         <Route path="/admin/moderation/:listingId" element={<AdminRoute><AdminListingDetail /></AdminRoute>} />
+        <Route path="/admin/rental-requests" element={<AdminRoute><AdminRentalRequests /></AdminRoute>} />
       </Routes>
       <BottomNav />
     </>

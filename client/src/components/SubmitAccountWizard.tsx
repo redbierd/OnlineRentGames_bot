@@ -21,14 +21,14 @@ export default function SubmitAccountWizard({ onClose }: { onClose?: () => void 
   const [description, setDescription] = useState('')
   const [login, setLogin] = useState('')
   const [password, setPassword] = useState('')
-  const [pricePerDay, setPricePerDay] = useState('')
+  const [pricePerHour, setPricePerHour] = useState('')
   const [extraInfo, setExtraInfo] = useState('')
   const [showPassword, setShowPassword] = useState(false)
 
   useEffect(() => { setGames(getGamesStore()) }, [])
 
   const game = games.find(g => g.id === gameId)
-  const canNext = step === 0 ? !!gameId : step === 1 ? (title && login && password && pricePerDay) : step === 2 ? true : false
+  const canNext = step === 0 ? !!gameId : step === 1 ? (title && login && password && pricePerHour) : step === 2 ? true : false
 
   const handleSubmit = async () => {
     if (!gameId) return
@@ -37,7 +37,7 @@ export default function SubmitAccountWizard({ onClose }: { onClose?: () => void 
     try {
       await submitListing(userId, username, {
         game_id: gameId, game_name: game?.name || '', title, description, extra_info: extraInfo,
-        price_per_day: Number(pricePerDay), rank, login, password,
+        price_per_day: Number(pricePerHour) * 24, rank, login, password,
       })
       navigate('/my-listings', { replace: true })
     } catch {
@@ -97,7 +97,7 @@ export default function SubmitAccountWizard({ onClose }: { onClose?: () => void 
                 <button onClick={() => setShowPassword(v => !v)} className="px-3 rounded-xl bg-surface-2 border border-white/5 text-text-secondary">{showPassword ? '🙈' : '👁'}</button>
               </div>
             </div>
-            <Field label="Цена за день (₽)" value={pricePerDay} onChange={setPricePerDay} placeholder="150" type="number" />
+            <Field label="Цена за час (₽)" value={pricePerHour} onChange={setPricePerHour} placeholder="50" type="number" />
           </div>
         )}
 
@@ -123,7 +123,7 @@ export default function SubmitAccountWizard({ onClose }: { onClose?: () => void 
               <p><span className="text-text-muted">Игра:</span> <span className="font-medium">{game?.name}</span></p>
               <p><span className="text-text-muted">Название:</span> <span className="font-medium">{title}</span></p>
               <p><span className="text-text-muted">Ранг:</span> <span className="font-medium">{rank || '—'}</span></p>
-              <p><span className="text-text-muted">Цена:</span> <span className="font-medium text-accent">{pricePerDay}₽/день</span></p>
+              <p><span className="text-text-muted">Цена:</span> <span className="font-medium text-accent">{pricePerHour}₽/час</span></p>
               {description && <p><span className="text-text-muted">Описание:</span> {description}</p>}
               {extraInfo && <p><span className="text-text-muted">Условия:</span> {extraInfo}</p>}
             </div>

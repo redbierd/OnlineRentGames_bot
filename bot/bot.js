@@ -13,6 +13,7 @@ const USERS_FILE = path.join(dataDir, 'users.json')
 const LISTINGS_FILE = path.join(dataDir, 'listings.json')
 const ORDERS_FILE = path.join(dataDir, 'orders.json')
 const ACCOUNTS_FILE = path.join(dataDir, 'accounts.json')
+const RENTAL_REQUESTS_FILE = path.join(dataDir, 'rental_requests.json')
 
 const TOKEN = process.env.BOT_TOKEN || '8860618629:AAFvQJ39Vz9mLsC6VxRbz8INWJ1k8AU-mSQ'
 const ADMIN_ID = process.env.ADMIN_ID || '864525792'
@@ -151,12 +152,125 @@ app.post('/api/listings/:id/suspend', (req, res) => {
 })
 
 // Orders
-app.get('/api/orders', (req, res) => res.json(load(ORDERS_FILE)))
+app.get('/api/orders', (req, res) => {
+  let orders = load(ORDERS_FILE)
+  if (req.query.user_id) orders = orders.filter(o => o.user_id === String(req.query.user_id))
+  res.json(orders)
+})
 app.post('/api/orders', (req, res) => {
   const orders = load(ORDERS_FILE)
   const order = { id: orders.length ? Math.max(...orders.map(o => o.id)) + 1 : 1, ...req.body, status: 'active', created_at: new Date().toISOString() }
   orders.push(order); save(ORDERS_FILE, orders)
   res.status(201).json(order)
+})
+
+// Rental Requests (user wants to rent an account)
+app.get('/api/rental-requests', (req, res) => {
+  let requests = load(RENTAL_REQUESTS_FILE)
+  if (req.query.user_id) requests = requests.filter(r => r.requester_id === String(req.query.user_id))
+  if (req.query.status) requests = requests.filter(r => r.status === req.query.status)
+  res.json(requests)
+})
+
+app.post('/api/rental-requests', (req, res) => {
+  const d = req.body
+  if (!d.requester_id || !d.account_id || !d.hours) return res.status(400).json({ error: 'Missing fields' })
+
+  const accounts = load(ACCOUNTS_FILE)
+  const account = accounts.find(a => a.id === Number(d.account_id))
+  if (!account) return res.status(404).json({ error: 'Account not found' })
+
+  const listings = load(LISTINGS_FILE)
+  const listing = listings.find(l => l.game_id === account.game_id && l.title === account.title && l.status === 'approved')
+  const pricePerHour = listing ? listing.price_per_day / 24 : account.price_per_day / 24
+
+  const requests = load(RENTAL_REQUESTS_FILE)
+  const request = {
+    id: requests.length ? Math.max(...requests.map(r => r.id)) + 1 : 1,
+    requester_id: String(d.requester_id),
+    requester_username: d.requester_username || '',
+    account_id: Number(d.account_id),
+    owner_id: account.owner_id || '',
+    game_id: account.game_id,
+    game_name: listing?.game_name || '',
+    account_title: account.title,
+    hours: Number(d.hours),
+    total_price: Math.ceil(pricePerHour * d.hours),
+    status: 'pending',
+    created_at: new Date().toISOString(),
+  }
+  requests.push(request)
+  save(RENTAL_REQUESTS_FILE, requests)
+
+  // Notify admin
+  bot.sendMessage(ADMIN_ID,
+    `🔔 ЗАЯВКА НА АРЕНДУ\n\n🎮 ${request.game_name}\n💼 ${request.account_title}\n\n👤 Арендатор: @${request.requester_username || '—'}\n🆔 ${request.requester_id}\n\n⏱ ${request.hours}ч · 💰 ${request.total_price}₽\n\n🕐 ${new Date().toLocaleString('ru-RU')}`
+  ).catch(() => {})
+
+  res.status(201).json(request)
+})
+
+app.post('/api/rental-requests/:id/approve', (req, res) => {
+  const requests = load(RENTAL_REQUESTS_FILE)
+  const request = requests.find(r => r.id === Number(req.params.id))
+  if (!request) return res.status(404).json({ error: 'Not found' })
+
+  request.status = 'approved'
+  save(RENTAL_REQUESTS_FILE, requests)
+
+  // Create order
+  const accounts = load(ACCOUNTS_FILE)
+  const account = accounts.find(a => a.id === request.account_id)
+  const orders = load(ORDERS_FILE)
+  const order = {
+    id: orders.length ? Math.max(...orders.map(o => o.id)) + 1 : 1,
+    account_id: request.account_id, game_id: request.game_id,
+    game_name: request.game_name, game_slug: '', account_title: request.account_title,
+    user_id: request.requester_id, username: request.requester_username,
+    rental_days: Math.ceil(request.hours / 24), total_price: request.total_price,
+    status: 'active', created_at: new Date().toISOString(),
+    expires_at: new Date(Date.now() + request.hours * 3600000).toISOString(),
+    credentials: listing?.credentials || { login: 'hidden', password: 'hidden' },
+  }
+
+  // Get credentials from listing
+  const listings = load(LISTINGS_FILE)
+  const listing = listings.find(l => l.user_id === request.owner_id && l.game_id === request.game_id && l.title === request.account_title)
+  if (listing) order.credentials = listing.credentials
+
+  orders.push(order)
+  save(ORDERS_FILE, orders)
+
+  // Mark account as rented
+  if (account) { account.status = 'rented'; save(ACCOUNTS_FILE, accounts) }
+
+  // Notify renter
+  const credsText = order.credentials ? `\n\n🔐 Логин: ${order.credentials.login}\n🔐 Пароль: ${order.credentials.password}` : ''
+  bot.sendMessage(request.requester_id,
+    `✅ АРЕНДА ОДОБРЕНА!\n\n🎮 ${request.game_name}\n💼 ${request.account_title}\n\n⏱ ${request.hours}ч · 💰 ${request.total_price}₽${credsText}\n\nОткройте приложение для подробностей.`
+  ).catch(() => {})
+
+  // Notify owner
+  bot.sendMessage(request.owner_id,
+    `📢 Ваш аккаунт арендован!\n\n🎮 ${request.game_name}\n💼 ${request.account_title}\n\n⏱ ${request.hours}ч\n\nПосле завершения аренды смените пароль.`
+  ).catch(() => {})
+
+  res.json(request)
+})
+
+app.post('/api/rental-requests/:id/reject', (req, res) => {
+  const requests = load(RENTAL_REQUESTS_FILE)
+  const request = requests.find(r => r.id === Number(req.params.id))
+  if (!request) return res.status(404).json({ error: 'Not found' })
+
+  request.status = 'rejected'
+  save(RENTAL_REQUESTS_FILE, requests)
+
+  bot.sendMessage(request.requester_id,
+    `❌ Заявка на аренду отклонена\n\n🎮 ${request.game_name}\n💼 ${request.account_title}\n\nПричина: ${req.body.reason || 'Не указана'}`
+  ).catch(() => {})
+
+  res.json(request)
 })
 
 // Accounts (catalog)
