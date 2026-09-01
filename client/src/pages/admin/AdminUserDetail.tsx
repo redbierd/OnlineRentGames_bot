@@ -5,6 +5,7 @@ import { adminGetUser, adminUpdateUserLevel, adminGetUserOrders, adminCreateOrde
 import type { BotUser } from '../../api/admin'
 import type { Rental, Account, Game } from '../../types'
 import Header from '../../components/Header'
+import { formatTime } from '../../utils/activity'
 
 const LEVELS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
 
@@ -72,6 +73,23 @@ export default function AdminUserDetail() {
             <div className="rounded-lg bg-surface-3 p-2"><p className="text-lg font-bold">{asOwner.length}</p><p className="text-[10px] text-text-muted">Сдаёт</p></div>
           </div>
           <p className="text-[10px] text-text-muted mt-2">Зарегистрирован: {new Date(user.created_at).toLocaleString('ru-RU')}</p>
+          <p className="text-[10px] text-text-muted">Последний визит: {user.last_seen ? new Date(user.last_seen).toLocaleString('ru-RU') : '—'}</p>
+        </div>
+
+        {/* Activity */}
+        <div className="rounded-xl bg-surface-2 border border-white/5 p-4 animate-fade-in">
+          <p className="text-xs text-text-muted mb-3">Активность пользователя</p>
+          <div className="space-y-2">
+            <ActivityRow label="Открыл бота" active={user.activity?.opened_bot} />
+            <ActivityRow label="Принял соглашение" active={user.activity?.accepted_terms} />
+            <ActivityRow label="Открыл Mini App" active={user.activity?.opened_miniapp} />
+            <ActivityRow label="Посмотрел игры" active={user.activity?.browsed_games} />
+            <ActivityRow label="Зашёл в профиль" active={user.activity?.visited_profile} />
+            <ActivityRow label="Открыл аренду" active={user.activity?.visited_rental} />
+          </div>
+          {user.activity?.time_in_app_seconds > 0 && (
+            <p className="text-[10px] text-text-muted mt-3">Время в приложении: {formatTime(user.activity.time_in_app_seconds)}</p>
+          )}
         </div>
 
         {/* Level */}
@@ -173,6 +191,17 @@ function AddRentalModal({ targetUserId, onClose, onDone }: { targetUserId: strin
           </div>
         )}
       </div>
+    </div>
+  )
+}
+
+function ActivityRow({ label, active }: { label: string; active?: boolean }) {
+  return (
+    <div className="flex items-center justify-between py-1">
+      <span className="text-xs text-text-secondary">{label}</span>
+      <span className={`text-[10px] font-medium px-2 py-0.5 rounded-full ${active ? 'text-success bg-success/10' : 'text-text-muted bg-surface-3'}`}>
+        {active ? '✅ Да' : '— Нет'}
+      </span>
     </div>
   )
 }

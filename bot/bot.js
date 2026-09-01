@@ -39,12 +39,15 @@ bot.onText(/\/start/, (msg) => {
     users.push({
       id: String(u.id), first_name: u.first_name || '', last_name: u.last_name || '',
       username: u.username || '', role: String(u.id) === ADMIN_ID ? 'ADMIN' : 'USER',
-      level: 1, created_at: new Date().toISOString(), last_seen: new Date().toISOString()
+      level: 1, created_at: new Date().toISOString(), last_seen: new Date().toISOString(),
+      activity: { opened_bot: true, accepted_terms: false, opened_miniapp: false, visited_profile: false, visited_rental: false, browsed_games: false, time_in_app_seconds: 0 }
     })
     save(USERS_FILE, users)
   } else {
     existing.last_seen = new Date().toISOString()
     if (String(u.id) === ADMIN_ID && existing.role !== 'ADMIN') existing.role = 'ADMIN'
+    if (!existing.activity) existing.activity = { opened_bot: true, accepted_terms: false, opened_miniapp: false, visited_profile: false, visited_rental: false, browsed_games: false, time_in_app_seconds: 0 }
+    existing.activity.opened_bot = true
     save(USERS_FILE, users)
   }
   bot.sendMessage(msg.chat.id, '🎮 Добро пожаловать в GameRent!\n\nАрендуй аккаунты или сдавайте свои:', {
@@ -98,6 +101,34 @@ app.post('/api/users/:id/level', requireAdmin, (req, res) => {
   u.level = Number(req.body.level)
   save(USERS_FILE, users)
   res.json(u)
+})
+
+// Activity tracking
+app.post('/api/activity', requireAuth, (req, res) => {
+  const { field, value } = req.body
+  if (!field) return res.status(400).json({ error: 'Missing field' })
+  const users = load(USERS_FILE)
+  const u = users.find(x => x.id === req.user.id)
+  if (u) {
+    if (!u.activity) u.activity = { opened_bot: true, accepted_terms: false, opened_miniapp: false, visited_profile: false, visited_rental: false, browsed_games: false, time_in_app_seconds: 0 }
+    u.activity[field] = value !== undefined ? value : true
+    u.last_seen = new Date().toISOString()
+    save(USERS_FILE, users)
+  }
+  res.json({ ok: true })
+})
+
+app.post('/api/activity/time', requireAuth, (req, res) => {
+  const { seconds } = req.body
+  const users = load(USERS_FILE)
+  const u = users.find(x => x.id === req.user.id)
+  if (u) {
+    if (!u.activity) u.activity = { opened_bot: true, accepted_terms: false, opened_miniapp: false, visited_profile: false, visited_rental: false, browsed_games: false, time_in_app_seconds: 0 }
+    u.activity.time_in_app_seconds = (u.activity.time_in_app_seconds || 0) + (seconds || 0)
+    u.last_seen = new Date().toISOString()
+    save(USERS_FILE, users)
+  }
+  res.json({ ok: true })
 })
 
 // ── Accounts (catalog) ──

@@ -2,7 +2,8 @@ import type { Account, Rental } from '../types'
 import { fetchAllUsers, updateUserLevel, fetchModeration, approveAccount, rejectAccount, fetchMyAccounts, createRental, extendRental, completeRental, fetchMyRentals } from './server'
 
 export type BotUser = {
-  id: string; first_name: string; last_name: string; username: string; role: string; level: number; created_at: string; last_seen: string
+  id: string; first_name: string; last_name: string; username: string; role: string; level: number; created_at: string; last_seen: string;
+  activity?: { opened_bot: boolean; accepted_terms: boolean; opened_miniapp: boolean; visited_profile: boolean; visited_rental: boolean; browsed_games: boolean; time_in_app_seconds: number }
 }
 
 export { fetchModeration, approveAccount as adminApproveListing, rejectAccount as adminRejectListing }
