@@ -95,8 +95,78 @@ function requireAdmin(req, res, next) {
   next()
 }
 
+// ── Level config ──
+const LEVELS = [
+  { level: 1, name: 'Новичок', xpRequired: 0, cashbackPercent: 1, commissionPercent: 15 },
+  { level: 2, name: 'Игрок', xpRequired: 100, cashbackPercent: 2, commissionPercent: 14 },
+  { level: 3, name: 'Опытный', xpRequired: 250, cashbackPercent: 3, commissionPercent: 13 },
+  { level: 4, name: 'Профи', xpRequired: 500, cashbackPercent: 4, commissionPercent: 11 },
+  { level: 5, name: 'Ветеран', xpRequired: 800, cashbackPercent: 5, commissionPercent: 10 },
+  { level: 6, name: 'Эксперт', xpRequired: 1200, cashbackPercent: 6, commissionPercent: 9 },
+  { level: 7, name: 'Мастер', xpRequired: 1800, cashbackPercent: 7, commissionPercent: 8 },
+  { level: 8, name: 'Элита', xpRequired: 2500, cashbackPercent: 8, commissionPercent: 7 },
+  { level: 9, name: 'Легенда', xpRequired: 3500, cashbackPercent: 9, commissionPercent: 6 },
+  { level: 10, name: 'VIP', xpRequired: 5000, cashbackPercent: 10, commissionPercent: 5 },
+]
+
+function getLevelInfo(xp) {
+  let level = 1
+  for (let i = LEVELS.length - 1; i >= 0; i--) {
+    if (xp >= LEVELS[i].xpRequired) { level = LEVELS[i].level; break }
+  }
+  const current = LEVELS.find(l => l.level === level)
+  const next = LEVELS.find(l => l.level === level + 1)
+  return {
+    level,
+    levelName: current.name,
+    xp,
+    currentXp: xp - current.xpRequired,
+    nextXp: next ? next.xpRequired - current.xpRequired : 0,
+    cashbackPercent: current.cashbackPercent,
+    commissionPercent: current.commissionPercent,
+  }
+}
+
 // ── Users ──
-app.get('/api/users/me', requireAuth, (req, res) => res.json(req.user))
+app.get('/api/users/me', requireAuth, (req, res) => {
+  const user = req.user
+  const rentals = load(RENTALS_FILE)
+  const accounts = load(ACCOUNTS_FILE)
+
+  // Calculate XP from rental history
+  const asRenter = rentals.filter(r => r.renter_id === user.id && r.status === 'completed')
+  const asOwner = rentals.filter(r => r.owner_id === user.id && r.status === 'completed')
+  const renterHours = asRenter.reduce((s, r) => s + (r.hours || 0), 0)
+  const ownerHours = asOwner.reduce((s, r) => s + (r.hours || 0), 0)
+  const xp = renterHours + ownerHours * 2
+
+  // Calculate balance (mock - total spent as balance for now)
+  const totalSpent = rentals.filter(r => r.renter_id === user.id).reduce((s, r) => s + (r.price || 0), 0)
+  const totalEarned = rentals.filter(r => r.owner_id === user.id).reduce((s, r) => s + (r.price || 0), 0)
+  const balance = totalEarned - totalSpent
+
+  // Calculate cashback points
+  const cashbackPoints = Math.floor(totalSpent * 0.01) // 1% default
+
+  const levelInfo = getLevelInfo(xp)
+
+  res.json({
+    ...user,
+    xp,
+    level: levelInfo.level,
+    levelName: levelInfo.levelName,
+    currentXp: levelInfo.currentXp,
+    nextXp: levelInfo.nextXp,
+    cashbackPercent: levelInfo.cashbackPercent,
+    commissionPercent: levelInfo.commissionPercent,
+    balance: Math.max(0, balance),
+    cashbackPoints,
+    totalSpent,
+    totalEarned,
+    renterHours,
+    ownerHours,
+  })
+})
 
 app.get('/api/users', requireAdmin, (req, res) => res.json(load(USERS_FILE)))
 

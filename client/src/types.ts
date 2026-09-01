@@ -55,7 +55,20 @@ export interface UserProfile {
   first_name: string
   last_name?: string
   username?: string
+  photo_url?: string
   role: 'USER' | 'ADMIN'
   level: number
+  levelName?: string
+  xp: number
+  currentXp: number
+  nextXp: number
+  cashbackPercent: number
+  commissionPercent: number
+  balance: number
+  cashbackPoints: number
+  totalSpent: number
+  totalEarned: number
+  renterHours: number
+  ownerHours: number
   created_at: string
 }

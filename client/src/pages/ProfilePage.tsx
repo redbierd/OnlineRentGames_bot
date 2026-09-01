@@ -24,11 +24,15 @@ export default function ProfilePage() {
             <div className="w-12 h-12 rounded-full skeleton" />
             <div className="flex-1"><div className="h-4 w-32 skeleton mb-1" /><div className="h-3 w-20 skeleton" /></div>
           </div>
-          <div className="h-32 skeleton rounded-xl" />
+          <div className="h-24 skeleton rounded-2xl" />
+          <div className="h-20 skeleton rounded-2xl" />
+          <div className="h-32 skeleton rounded-2xl" />
         </div>
       </div>
     )
   }
+
+  const progressPercent = user.nextXp > 0 ? Math.min(100, (user.currentXp / user.nextXp) * 100) : 100
 
   return (
     <div className="flex-1 nav-spacer max-w-lg mx-auto w-full overflow-y-auto">
@@ -49,24 +53,76 @@ export default function ProfilePage() {
           </div>
         </div>
 
-        {/* Level */}
-        <div className="card p-4 animate-fade-in">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-[11px] text-text-muted">Уровень</p>
-              <p className="text-xl font-bold text-accent">{user.level}</p>
+        {/* Balance & Cashback */}
+        <div className="grid grid-cols-2 gap-3 animate-fade-in">
+          <div className="card p-4">
+            <div className="flex items-center gap-2 mb-2">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="text-accent">
+                <rect x="2" y="4" width="20" height="16" rx="2" />
+                <path d="M2 10h20" />
+              </svg>
+              <span className="text-[11px] text-text-muted font-medium">Баланс</span>
             </div>
-            <div className="w-10 h-10 rounded-lg bg-accent/10 flex items-center justify-center">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="text-accent">
+            <p className="text-xl font-bold">{user.balance}₽</p>
+          </div>
+          <div className="card p-4">
+            <div className="flex items-center gap-2 mb-2">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="text-success">
                 <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
               </svg>
+              <span className="text-[11px] text-text-muted font-medium">Кэшбэк</span>
+            </div>
+            <p className="text-xl font-bold text-success">{user.cashbackPoints}</p>
+            <p className="text-[10px] text-text-muted">баллов</p>
+          </div>
+        </div>
+
+        {/* Level Card */}
+        <button
+          onClick={() => navigate('/levels')}
+          className="w-full text-left card-interactive p-4 animate-fade-in"
+        >
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-lg bg-warning/10 flex items-center justify-center">
+                <span className="text-sm">⭐</span>
+              </div>
+              <div>
+                <p className="text-[11px] text-text-muted">Уровень {user.level}</p>
+                <p className="text-[13px] font-bold">{user.levelName || 'Новичок'}</p>
+              </div>
+            </div>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-text-muted/40">
+              <polyline points="9 18 15 12 9 6" />
+            </svg>
+          </div>
+
+          {/* Progress */}
+          <div className="mb-2">
+            <div className="flex justify-between text-[11px] mb-1">
+              <span className="text-text-muted">{user.currentXp} / {user.nextXp} XP</span>
+              <span className="text-accent">{user.nextXp - user.currentXp} XP до уровня {user.level + 1}</span>
+            </div>
+            <div className="h-1.5 bg-surface-3 rounded-full overflow-hidden">
+              <div
+                className="h-full bg-accent rounded-full transition-all duration-500"
+                style={{ width: `${progressPercent}%` }}
+              />
             </div>
           </div>
-          <div className="mt-3 h-1.5 bg-surface-3 rounded-full overflow-hidden">
-            <div className="h-full bg-accent rounded-full" style={{ width: `${(user.xp / user.xp_to_next) * 100}%` }} />
+
+          {/* Benefits */}
+          <div className="flex gap-3 mt-3">
+            <div className="flex-1 bg-surface-3 rounded-lg p-2 text-center">
+              <p className="text-[10px] text-text-muted">Кэшбэк</p>
+              <p className="text-[13px] font-bold text-success">{user.cashbackPercent}%</p>
+            </div>
+            <div className="flex-1 bg-surface-3 rounded-lg p-2 text-center">
+              <p className="text-[10px] text-text-muted">Комиссия</p>
+              <p className="text-[13px] font-bold text-warning">{user.commissionPercent}%</p>
+            </div>
           </div>
-          <p className="text-[10px] text-text-muted mt-1.5">{user.xp} / {user.xp_to_next} XP</p>
-        </div>
+        </button>
 
         {/* Quick Links */}
         <div className="space-y-2 animate-fade-in">
