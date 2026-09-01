@@ -47,6 +47,7 @@ export interface Rental {
   end_reason?: string
   ten_min_warning: boolean
   payment_source: string
+  credentials?: { login: string; password: string }
 }
 
 export interface UserProfile {

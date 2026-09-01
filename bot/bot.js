@@ -329,6 +329,7 @@ app.post('/api/rentals', requireAuth, (req, res) => {
     created_at: new Date().toISOString(),
     ten_min_warning: false,
     payment_source: 'mock',
+    credentials: { login: acc.login || '', password: acc.password || '' },
   }
   rentals.push(rental)
   save(RENTALS_FILE, rentals)
@@ -370,6 +371,7 @@ app.post('/api/admin/rentals', requireAdmin, (req, res) => {
     created_at: new Date().toISOString(),
     ten_min_warning: false,
     payment_source: 'admin',
+    credentials: { login: acc.login || '', password: acc.password || '' },
   }
   rentals.push(rental)
   save(RENTALS_FILE, rentals)
