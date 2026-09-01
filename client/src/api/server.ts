@@ -104,9 +104,17 @@ export async function fetchAllRentals(): Promise<any[]> {
 }
 
 export async function fetchRental(id: number): Promise<any | null> {
-  const res = await fetch(`${API_BASE}/rentals/${id}`, { headers: headers() })
-  if (!res.ok) return null
-  return res.json()
+  try {
+    const res = await fetch(`${API_BASE}/rentals/${id}`, { headers: headers() })
+    if (!res.ok) {
+      console.error('fetchRental failed:', res.status, res.statusText)
+      return null
+    }
+    return res.json()
+  } catch (err) {
+    console.error('fetchRental error:', err)
+    return null
+  }
 }
 
 export async function createRental(accountId: number, hours: number): Promise<any> {
