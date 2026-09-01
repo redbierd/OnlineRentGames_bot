@@ -18,14 +18,20 @@ export default function RentalDetailPage() {
   const navigate = useNavigate()
   const [rental, setRental] = useState<Rental | null>(null)
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
   const [showExtend, setShowExtend] = useState(false)
   const [toast, setToast] = useState('')
 
   const load = useCallback(() => {
-    if (!rentalId) { setLoading(false); return }
+    if (!rentalId) { setLoading(false); setError('ID аренды не указан'); return }
+    setLoading(true)
+    setError('')
     fetchRental(Number(rentalId))
-      .then(r => setRental(r))
-      .catch(() => setRental(null))
+      .then(r => {
+        if (r) { setRental(r) }
+        else { setError('Не удалось загрузить данные аренды. Попробуйте ещё раз.') }
+      })
+      .catch(() => setError('Ошибка соединения с сервером'))
       .finally(() => setLoading(false))
   }, [rentalId])
 
@@ -50,15 +56,22 @@ export default function RentalDetailPage() {
     )
   }
 
-  if (!rental) {
+  if (error || !rental) {
     return (
       <div className="flex-1 max-w-lg mx-auto w-full">
         <Header title="Ошибка" showBack />
         <div className="flex flex-col items-center justify-center py-20 px-4">
-          <p className="text-text-secondary text-sm mb-4">Аренда не найдена</p>
-          <button onClick={() => navigate('/rentals')} className="px-6 py-2.5 btn-primary text-sm">
-            Мои аренды
-          </button>
+          <div className="w-14 h-14 rounded-full bg-danger/10 flex items-center justify-center mb-4">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-danger">
+              <circle cx="12" cy="12" r="10" /><line x1="15" y1="9" x2="9" y2="15" /><line x1="9" y1="9" x2="15" y2="15" />
+            </svg>
+          </div>
+          <p className="text-[13px] text-text-secondary text-center mb-2">{error || 'Аренда не найдена'}</p>
+          <p className="text-[11px] text-text-muted mb-6">ID: {rentalId}</p>
+          <div className="flex gap-3">
+            <button onClick={load} className="px-5 py-2.5 btn-secondary text-[13px]">Повторить</button>
+            <button onClick={() => navigate('/rentals')} className="px-5 py-2.5 btn-primary text-[13px]">Мои аренды</button>
+          </div>
         </div>
       </div>
     )
