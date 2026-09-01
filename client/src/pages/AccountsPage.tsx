@@ -38,7 +38,7 @@ export default function AccountsPage() {
   }
 
   const available = accounts.filter((a) => a.status === 'available')
-  const minPrice = available.length > 0 ? Math.min(...available.map(a => a.price_per_day)) : 0
+  const minPrice = available.length > 0 ? Math.min(...available.map(a => a.price_per_hour)) : 0
 
   return (
     <div className="flex-1 max-w-lg mx-auto w-full">
@@ -53,7 +53,7 @@ export default function AccountsPage() {
           <h2 className="text-xl font-bold">{game.name}</h2>
           <p className="text-sm text-text-secondary mt-0.5">
             {available.length > 0
-              ? `${available.length} аккаунтов · от ${minPrice}₽/день`
+              ? `${available.length} аккаунтов · от ${minPrice}₽/час`
               : 'Нет доступных аккаунтов'}
           </p>
         </div>
