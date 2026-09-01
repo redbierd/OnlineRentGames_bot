@@ -85,9 +85,6 @@ function requireAuth(req, res, next) {
   req.user = getUser(req)
   next()
 }
-  req.user = user
-  next()
-}
 
 function requireAdmin(req, res, next) {
   const uid = req.headers['x-user-id']
