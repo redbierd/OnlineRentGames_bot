@@ -51,6 +51,9 @@ export default function SellerPage() {
   }
 
   const totalIncome = accounts.reduce((s, a) => s + (a.total_income || 0), 0)
+  const commissionPercent = user?.commissionPercent || 15
+  const commissionAmount = Math.ceil(totalIncome * commissionPercent / 100)
+  const netIncome = totalIncome - commissionAmount
   const activeRentals = accounts.filter(a => a.is_rented).length
   const totalAccounts = accounts.length
   const totalRentals = accounts.reduce((s, a) => s + (a.total_rentals || 0), 0)
@@ -169,14 +172,34 @@ export default function SellerPage() {
              DASHBOARD — Has accounts
              ══════════════════════════════════════════ */
           <>
-            {/* Income Hero */}
+            {/* Net Income Hero */}
             <div className="animate-fade-in">
-              <p className="text-[11px] text-text-muted font-medium uppercase tracking-wider mb-1">Доход</p>
-              <p className="text-3xl font-bold text-accent">{totalIncome}₽</p>
-              {user && user.commissionPercent > 0 && (
-                <p className="text-[11px] text-text-muted mt-1">Комиссия площадки: {user.commissionPercent}%</p>
-              )}
+              <p className="text-[11px] text-text-muted font-medium uppercase tracking-wider mb-1">Итоговый доход</p>
+              <p className="text-3xl font-bold text-success">{netIncome}₽</p>
+              <p className="text-[11px] text-text-muted mt-1">После вычета комиссии</p>
             </div>
+
+            {/* Commission Breakdown */}
+            {user && commissionAmount > 0 && (
+              <div className="card p-4 animate-fade-in">
+                <p className="text-[11px] text-text-muted font-medium uppercase tracking-wider mb-3">Расчёт дохода</p>
+                <div className="space-y-2">
+                  <div className="flex justify-between text-[13px]">
+                    <span className="text-text-secondary">Валовый доход</span>
+                    <span className="font-medium">{totalIncome}₽</span>
+                  </div>
+                  <div className="flex justify-between text-[13px]">
+                    <span className="text-text-secondary">Комиссия ({user.commissionPercent}%)</span>
+                    <span className="font-medium text-danger">-{commissionAmount}₽</span>
+                  </div>
+                  <div className="border-t border-white/[0.04] my-1" />
+                  <div className="flex justify-between text-[15px]">
+                    <span className="font-bold">Чистый доход</span>
+                    <span className="font-bold text-success">{netIncome}₽</span>
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* Level & Commission */}
             {user && (
@@ -202,7 +225,7 @@ export default function SellerPage() {
               <StatCard label="Аккаунтов" value={totalAccounts} />
               <StatCard label="Сдаются" value={activeRentals} color="text-success" />
               <StatCard label="Аренд" value={totalRentals} />
-              <StatCard label="Заработано" value={`${totalIncome}₽`} color="text-accent" />
+              <StatCard label="Заработано" value={`${netIncome}₽`} color="text-success" />
             </div>
 
             {/* CTA */}
