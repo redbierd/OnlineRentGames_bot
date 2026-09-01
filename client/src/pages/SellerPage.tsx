@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import { fetchMyAccounts, updateAccountPassword } from '../api/server'
+import { fetchUser } from '../api'
+import type { UserProfile } from '../types'
 import Header from '../components/Header'
 
 const GAME_LINKS: Record<number, { url: string; instruction: string }> = {
@@ -23,13 +25,16 @@ export default function SellerPage() {
   const { userId } = useAuth()
   const navigate = useNavigate()
   const [accounts, setAccounts] = useState<any[]>([])
+  const [user, setUser] = useState<UserProfile | null>(null)
   const [loading, setLoading] = useState(true)
   const [updatingId, setUpdatingId] = useState<number | null>(null)
   const [newPassword, setNewPassword] = useState('')
   const [toast, setToast] = useState('')
 
   useEffect(() => {
-    fetchMyAccounts().then(setAccounts).finally(() => setLoading(false))
+    Promise.all([fetchMyAccounts(), fetchUser()])
+      .then(([a, u]) => { setAccounts(a); setUser(u) })
+      .finally(() => setLoading(false))
   }, [])
 
   const notify = (msg: string) => { setToast(msg); setTimeout(() => setToast(''), 3000) }
@@ -168,7 +173,29 @@ export default function SellerPage() {
             <div className="animate-fade-in">
               <p className="text-[11px] text-text-muted font-medium uppercase tracking-wider mb-1">Доход</p>
               <p className="text-3xl font-bold text-accent">{totalIncome}₽</p>
+              {user && user.commissionPercent > 0 && (
+                <p className="text-[11px] text-text-muted mt-1">Комиссия площадки: {user.commissionPercent}%</p>
+              )}
             </div>
+
+            {/* Level & Commission */}
+            {user && (
+              <div className="card p-4 animate-fade-in">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className="text-lg">⭐</span>
+                    <div>
+                      <p className="text-[11px] text-text-muted">Уровень {user.level}</p>
+                      <p className="text-[13px] font-bold">{user.levelName || 'Новичок'}</p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-[11px] text-text-muted">Ваша комиссия</p>
+                    <p className="text-lg font-bold text-warning">{user.commissionPercent}%</p>
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* Stats */}
             <div className="grid grid-cols-2 gap-3 animate-fade-in">

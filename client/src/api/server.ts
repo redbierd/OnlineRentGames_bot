@@ -146,3 +146,17 @@ export async function completeRental(rentalId: number, reason: string): Promise<
   if (!res.ok) throw new Error('Failed')
   return res.json()
 }
+
+// ── Wallet API ──
+
+export async function fetchWallet(): Promise<{ balance: number; cashbackPoints: number; transactions: any[] }> {
+  const res = await fetch(`${API_BASE}/wallet`, { headers: headers() })
+  if (!res.ok) return { balance: 0, cashbackPoints: 0, transactions: [] }
+  return res.json()
+}
+
+export async function topUpWallet(amount: number): Promise<any> {
+  const res = await fetch(`${API_BASE}/wallet/topup`, { method: 'POST', headers: headers(), body: JSON.stringify({ amount }) })
+  if (!res.ok) throw new Error('Failed')
+  return res.json()
+}

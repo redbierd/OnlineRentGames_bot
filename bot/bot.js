@@ -12,6 +12,7 @@ if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir, { recursive: true })
 const USERS_FILE = path.join(dataDir, 'users.json')
 const ACCOUNTS_FILE = path.join(dataDir, 'accounts.json')
 const RENTALS_FILE = path.join(dataDir, 'rentals.json')
+const TRANSACTIONS_FILE = path.join(dataDir, 'transactions.json')
 
 const TOKEN = process.env.BOT_TOKEN || '8860618629:AAFvQJ39Vz9mLsC6VxRbz8INWJ1k8AU-mSQ'
 const ADMIN_ID = process.env.ADMIN_ID || '864525792'
@@ -194,6 +195,47 @@ app.post('/api/activity', requireAuth, (req, res) => {
   res.json({ ok: true })
 })
 
+// ── Wallet & Transactions ──
+
+function getWalletBalance(userId) {
+  const txns = load(TRANSACTIONS_FILE).filter(t => t.user_id === userId)
+  return txns.reduce((sum, t) => sum + t.amount, 0)
+}
+
+function getCashbackPoints(userId) {
+  const txns = load(TRANSACTIONS_FILE).filter(t => t.user_id === userId && t.type === 'cashback')
+  return txns.reduce((sum, t) => sum + Math.abs(t.amount), 0)
+}
+
+function addTransaction(userId, type, amount, description, relatedId) {
+  const txns = load(TRANSACTIONS_FILE)
+  txns.push({
+    id: txns.length ? Math.max(...txns.map(t => t.id)) + 1 : 1,
+    user_id: userId,
+    type,
+    amount,
+    description,
+    related_id: relatedId || null,
+    created_at: new Date().toISOString(),
+  })
+  save(TRANSACTIONS_FILE, txns)
+}
+
+app.get('/api/wallet', requireAuth, (req, res) => {
+  const userId = req.user.id
+  const balance = getWalletBalance(userId)
+  const cashbackPoints = getCashbackPoints(userId)
+  const txns = load(TRANSACTIONS_FILE).filter(t => t.user_id === userId)
+  res.json({ balance, cashbackPoints, transactions: txns.sort((a, b) => new Date(b.created_at) - new Date(a.created_at)) })
+})
+
+app.post('/api/wallet/topup', requireAuth, (req, res) => {
+  const { amount } = req.body
+  if (!amount || amount <= 0) return res.status(400).json({ error: 'Invalid amount' })
+  addTransaction(req.user.id, 'topup', Number(amount), `Пополнение ${amount}₽`, null)
+  res.json({ ok: true, balance: getWalletBalance(req.user.id) })
+})
+
 app.post('/api/activity/time', requireAuth, (req, res) => {
   const { seconds } = req.body
   const users = load(USERS_FILE)
@@ -363,7 +405,7 @@ app.get('/api/rentals/:id', (req, res) => {
   res.json(r)
 })
 
-// Create rental (mock payment)
+// Create rental (wallet payment)
 app.post('/api/rentals', requireAuth, (req, res) => {
   const { account_id, hours } = req.body
   if (!account_id || !hours) return res.status(400).json({ error: 'Missing fields' })
@@ -373,6 +415,24 @@ app.post('/api/rentals', requireAuth, (req, res) => {
   if (!acc) return res.status(404).json({ error: 'Account not found' })
   if (acc.status !== 'available') return res.status(400).json({ error: 'Account not available' })
   if (acc.owner_id === req.user.id) return res.status(400).json({ error: 'Cannot rent your own account' })
+
+  const price = Math.ceil(acc.price_per_hour * hours)
+  const balance = getWalletBalance(req.user.id)
+  if (balance < price) return res.status(400).json({ error: 'Недостаточно средств на балансе', balance, needed: price })
+
+  // Deduct from renter
+  addTransaction(req.user.id, 'rental_payment', -price, `Аренда: ${acc.title} (${hours}ч)`, null)
+
+  // Cashback for renter
+  const users = load(USERS_FILE)
+  const renter = users.find(u => u.id === req.user.id)
+  const xp = (renter?.xp || 0) + hours
+  const levelInfo = getLevelInfo(xp)
+  const cashback = Math.floor(price * levelInfo.cashbackPercent / 100)
+  if (cashback > 0) addTransaction(req.user.id, 'cashback', cashback, `Кэшбэк ${levelInfo.cashbackPercent}% за аренду`, null)
+
+  // Update renter XP
+  if (renter) { renter.xp = xp; renter.level = levelInfo.level; save(USERS_FILE, users) }
 
   // Atomic: check and update
   acc.status = 'rented'
@@ -389,22 +449,22 @@ app.post('/api/rentals', requireAuth, (req, res) => {
     game_name: acc.game_name,
     account_title: acc.title,
     hours: Number(hours),
-    price: Math.ceil(acc.price_per_hour * hours),
+    price,
     status: 'active',
     started_at: new Date().toISOString(),
     expires_at: new Date(Date.now() + hours * 3600000).toISOString(),
     created_at: new Date().toISOString(),
     ten_min_warning: false,
-    payment_source: 'mock',
+    payment_source: 'wallet',
     credentials: { login: acc.login || '', password: acc.password || '' },
   }
   rentals.push(rental)
   save(RENTALS_FILE, rentals)
 
   // Notify owner
-  bot.sendMessage(acc.owner_id, `📢 Ваш аккаунт арендован!\n\n🎮 ${acc.game_name}\n💼 ${acc.title}\n\n⏱ ${hours}ч · 💰 ${rental.price}₽`).catch(() => {})
+  bot.sendMessage(acc.owner_id, `📢 Ваш аккаунт арендован!\n\n🎮 ${acc.game_name}\n💼 ${acc.title}\n\n⏱ ${hours}ч · 💰 ${price}₽`).catch(() => {})
 
-  res.status(201).json(rental)
+  res.status(201).json({ ...rental, cashback })
 })
 
 // Admin: create rental for any user
@@ -490,8 +550,18 @@ app.post('/api/rentals/:id/complete', requireAdmin, (req, res) => {
   const acc = accounts.find(a => a.id === rental.account_id)
   if (acc) { acc.status = 'waiting_password_change'; save(ACCOUNTS_FILE, accounts) }
 
+  // Credit owner (minus commission)
+  const users = load(USERS_FILE)
+  const owner = users.find(u => u.id === rental.owner_id)
+  const ownerXp = (owner?.xp || 0) + rental.hours * 2
+  const ownerLevelInfo = getLevelInfo(ownerXp)
+  const commission = Math.ceil(rental.price * ownerLevelInfo.commissionPercent / 100)
+  const ownerEarning = rental.price - commission
+  addTransaction(rental.owner_id, 'rental_income', ownerEarning, `Доход от аренды: ${rental.account_title} (${rental.hours}ч)`, rental.id)
+  if (owner) { owner.xp = ownerXp; owner.level = ownerLevelInfo.level; save(USERS_FILE, users) }
+
   const gl = GAME_LINKS[rental.game_id] || { name: rental.game_name, url: '', instruction: 'Смените пароль' }
-  bot.sendMessage(rental.owner_id, `⏰ Аренда завершена\n\n🎮 ${rental.game_name}\n💼 ${rental.account_title}\n\nПожалуйста, смените пароль:\n🔗 ${gl.url}\n📝 ${gl.instruction}`).catch(() => {})
+  bot.sendMessage(rental.owner_id, `⏰ Аренда завершена\n\n🎮 ${rental.game_name}\n💼 ${rental.account_title}\n\n💰 Доход: ${ownerEarning}₽ (комиссия ${commission}₽)\n\nПожалуйста, смените пароль:\n🔗 ${gl.url}\n📝 ${gl.instruction}`).catch(() => {})
   bot.sendMessage(rental.renter_id, `ℹ️ Аренда завершена\n\n🎮 ${rental.game_name}\n💼 ${rental.account_title}\n\nСрок аренды истёк.`).catch(() => {})
 
   res.json(rental)
@@ -530,8 +600,18 @@ function checkExpiredRentals() {
       const acc = accounts.find(a => a.id === r.account_id)
       if (acc) { acc.status = 'waiting_password_change' }
 
+      // Credit owner
+      const users = load(USERS_FILE)
+      const owner = users.find(u => u.id === r.owner_id)
+      const ownerXp = (owner?.xp || 0) + r.hours * 2
+      const ownerLevelInfo = getLevelInfo(ownerXp)
+      const commission = Math.ceil(r.price * ownerLevelInfo.commissionPercent / 100)
+      const ownerEarning = r.price - commission
+      addTransaction(r.owner_id, 'rental_income', ownerEarning, `Доход: ${r.account_title} (${r.hours}ч)`, r.id)
+      if (owner) { owner.xp = ownerXp; owner.level = ownerLevelInfo.level; save(USERS_FILE, users) }
+
       const gl = GAME_LINKS[r.game_id] || { name: r.game_name, url: '', instruction: 'Смените пароль' }
-      bot.sendMessage(r.owner_id, `⏰ Аренда завершена\n\n🎮 ${r.game_name}\n💼 ${r.account_title}\n\nПожалуйста, смените пароль:\n🔗 ${gl.url}\n📝 ${gl.instruction}\n\nПосле смены подтвердите в «Мои аккаунты».`).catch(() => {})
+      bot.sendMessage(r.owner_id, `⏰ Аренда завершена\n\n🎮 ${r.game_name}\n💼 ${r.account_title}\n\n💰 Доход: ${ownerEarning}₽ (комиссия ${commission}₽)\n\nПожалуйста, смените пароль:\n🔗 ${gl.url}\n📝 ${gl.instruction}\n\nПосле смены подтвердите в «Мои аккаунты».`).catch(() => {})
       bot.sendMessage(r.renter_id, `ℹ️ Аренда завершена\n\n🎮 ${r.game_name}\n💼 ${r.account_title}\n\nСрок аренды истёк.`).catch(() => {})
     }
   })

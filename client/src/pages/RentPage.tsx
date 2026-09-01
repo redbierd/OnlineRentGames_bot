@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { fetchAccountById } from '../api'
-import { createRental } from '../api/server'
-import type { Account } from '../types'
+import { fetchAccountById, fetchUser } from '../api'
+import { createRental, fetchWallet } from '../api/server'
+import type { Account, UserProfile } from '../types'
 import Header from '../components/Header'
 
 const OPTIONS = [
@@ -24,11 +24,19 @@ export default function RentPage() {
   const [error, setError] = useState('')
   const [done, setDone] = useState(false)
   const [showPayment, setShowPayment] = useState(false)
+  const [walletBalance, setWalletBalance] = useState(0)
+  const [cashbackPercent, setCashbackPercent] = useState(1)
 
   useEffect(() => {
     if (!accountId) return
-    fetchAccountById(Number(accountId)).then(d => {
+    Promise.all([
+      fetchAccountById(Number(accountId)),
+      fetchWallet(),
+      fetchUser(),
+    ]).then(([d, w, u]) => {
       if (d) { setAccount(d.account as unknown as Account); setGameName(d.gameName) }
+      setWalletBalance(w.balance)
+      setCashbackPercent(u.cashbackPercent || 1)
     }).finally(() => setLoading(false))
   }, [accountId])
 
@@ -112,6 +120,8 @@ export default function RentPage() {
           <div className="flex justify-between text-[13px] mb-2"><span className="text-text-muted">Часов</span><span>{hours}</span></div>
           <div className="border-t border-white/[0.04] my-2" />
           <div className="flex justify-between font-bold text-lg"><span>Итого</span><span className="text-accent">{total}₽</span></div>
+          <div className="flex justify-between text-[12px] mt-1"><span className="text-text-muted">Ваш кэшбэк</span><span className="text-success">{cashbackPercent}% ({Math.floor(total * cashbackPercent / 100)} баллов)</span></div>
+          <div className="flex justify-between text-[12px] mt-1"><span className="text-text-muted">Баланс</span><span className={walletBalance >= total ? 'text-success' : 'text-danger'}>{walletBalance}₽</span></div>
         </div>
 
         {error && <div className="rounded-xl bg-danger/10 border border-danger/20 p-3"><p className="text-[13px] text-danger">{error}</p></div>}
@@ -119,8 +129,12 @@ export default function RentPage() {
 
       {/* CTA */}
       <div className="p-4 glass border-t border-white/[0.03] safe-bottom">
-        <button onClick={() => setShowPayment(true)} className="w-full py-4 btn-primary text-[15px]">
-          Взять в аренду за {total}₽
+        <button
+          onClick={() => setShowPayment(true)}
+          disabled={walletBalance < total}
+          className="w-full py-4 btn-primary text-[15px] disabled:opacity-40 disabled:shadow-none"
+        >
+          {walletBalance < total ? `Недостаточно средств (${walletBalance}₽)` : `Оплатить ${total}₽`}
         </button>
       </div>
 
@@ -137,6 +151,8 @@ export default function RentPage() {
               <div className="flex justify-between"><span className="text-text-muted">Срок</span><span className="font-medium">{hours}ч</span></div>
               <div className="border-t border-white/[0.04] my-1" />
               <div className="flex justify-between font-bold text-lg"><span>К оплате</span><span className="text-accent">{total}₽</span></div>
+              <div className="flex justify-between text-[12px]"><span className="text-text-muted">С баланса</span><span className="text-danger">-{total}₽</span></div>
+              <div className="flex justify-between text-[12px]"><span className="text-text-muted">Кэшбэк</span><span className="text-success">+{Math.floor(total * cashbackPercent / 100)} баллов</span></div>
             </div>
             <div className="rounded-xl bg-warning/5 border border-warning/15 p-3 mb-4">
               <p className="text-[11px] text-warning text-center">Тестовый режим — оплата проходит автоматически</p>

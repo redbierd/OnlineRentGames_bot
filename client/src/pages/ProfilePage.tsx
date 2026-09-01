@@ -55,7 +55,7 @@ export default function ProfilePage() {
 
         {/* Balance & Cashback */}
         <div className="grid grid-cols-2 gap-3 animate-fade-in">
-          <div className="card p-4">
+          <button onClick={() => navigate('/wallet')} className="card p-4 text-left active:scale-[0.98] transition-transform">
             <div className="flex items-center gap-2 mb-2">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="text-accent">
                 <rect x="2" y="4" width="20" height="16" rx="2" />
@@ -64,8 +64,8 @@ export default function ProfilePage() {
               <span className="text-[11px] text-text-muted font-medium">Баланс</span>
             </div>
             <p className="text-xl font-bold">{user.balance}₽</p>
-          </div>
-          <div className="card p-4">
+          </button>
+          <button onClick={() => navigate('/wallet')} className="card p-4 text-left active:scale-[0.98] transition-transform">
             <div className="flex items-center gap-2 mb-2">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="text-success">
                 <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
@@ -74,7 +74,7 @@ export default function ProfilePage() {
             </div>
             <p className="text-xl font-bold text-success">{user.cashbackPoints}</p>
             <p className="text-[10px] text-text-muted">баллов</p>
-          </div>
+          </button>
         </div>
 
         {/* Level Card */}
