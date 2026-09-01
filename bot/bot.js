@@ -70,12 +70,21 @@ function getUser(req) {
   const uid = req.headers['x-user-id']
   if (!uid) return null
   const users = load(USERS_FILE)
-  return users.find(u => u.id === String(uid)) || null
+  const user = users.find(u => u.id === String(uid))
+  if (user) return user
+  // Auto-create user if not exists (e.g. first visit without /start)
+  const newUser = { id: String(uid), first_name: '', last_name: '', username: '', role: String(uid) === ADMIN_ID ? 'ADMIN' : 'USER', level: 1, created_at: new Date().toISOString(), last_seen: new Date().toISOString(), activity: { opened_bot: true, accepted_terms: false, opened_miniapp: false, visited_profile: false, visited_rental: false, browsed_games: false, time_in_app_seconds: 0 } }
+  users.push(newUser)
+  save(USERS_FILE, users)
+  return newUser
 }
 
 function requireAuth(req, res, next) {
-  const user = getUser(req)
-  if (!user) return res.status(401).json({ error: 'Unauthorized' })
+  const uid = req.headers['x-user-id']
+  if (!uid) return res.status(401).json({ error: 'Unauthorized' })
+  req.user = getUser(req)
+  next()
+}
   req.user = user
   next()
 }
@@ -269,6 +278,10 @@ app.post('/api/moderation/:id/reject', requireAdmin, (req, res) => {
 })
 
 // ── Rentals ──
+app.get('/api/rentals/all', requireAdmin, (req, res) => {
+  res.json(load(RENTALS_FILE))
+})
+
 app.get('/api/rentals', requireAuth, (req, res) => {
   const userId = req.user.id
   let rentals = load(RENTALS_FILE)
@@ -280,7 +293,9 @@ app.get('/api/rentals', requireAuth, (req, res) => {
 app.get('/api/rentals/:id', requireAuth, (req, res) => {
   const r = load(RENTALS_FILE).find(x => x.id === Number(req.params.id))
   if (!r) return res.status(404).json({ error: 'Not found' })
-  if (r.renter_id !== req.user.id && r.owner_id !== req.user.id && req.user.role !== 'ADMIN') return res.status(403).json({ error: 'Forbidden' })
+  // Allow renter, owner, or admin
+  const uid = req.user.id
+  if (r.renter_id !== uid && r.owner_id !== uid && uid !== ADMIN_ID) return res.status(403).json({ error: 'Forbidden' })
   res.json(r)
 })
 

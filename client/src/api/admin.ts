@@ -1,5 +1,5 @@
 import type { Account, Rental } from '../types'
-import { fetchAllUsers, updateUserLevel, fetchModeration, approveAccount, rejectAccount, fetchMyAccounts, createRental, extendRental, completeRental, fetchMyRentals } from './server'
+import { fetchAllUsers, updateUserLevel, fetchModeration, approveAccount, rejectAccount, fetchMyAccounts, createRental, extendRental, completeRental, fetchAllRentals } from './server'
 
 export type BotUser = {
   id: string; first_name: string; last_name: string; username: string; role: string; level: number; created_at: string; last_seen: string;
@@ -8,7 +8,7 @@ export type BotUser = {
 
 export { fetchModeration, approveAccount as adminApproveListing, rejectAccount as adminRejectListing }
 export { fetchMyAccounts, createRental as adminCreateOrder, extendRental as adminExtendOrder, completeRental as adminCompleteOrder }
-export { fetchMyRentals as adminGetOrders }
+export { fetchAllRentals as adminGetOrders }
 
 export async function adminGetUsers(): Promise<BotUser[]> {
   return fetchAllUsers()
@@ -24,7 +24,7 @@ export async function adminUpdateUserLevel(_adminId: string, userId: string, lev
 }
 
 export async function adminGetUserOrders(_adminId: string, userId: string): Promise<Rental[]> {
-  const all = await fetchMyRentals()
+  const all = await fetchAllRentals()
   return all.filter(r => r.owner_id === userId || r.renter_id === userId)
 }
 

@@ -97,6 +97,12 @@ export async function fetchMyRentals(): Promise<any[]> {
   return res.json()
 }
 
+export async function fetchAllRentals(): Promise<any[]> {
+  const res = await fetch(`${API_BASE}/rentals/all`, { headers: headers({ 'x-admin': '1' }) })
+  if (!res.ok) return []
+  return res.json()
+}
+
 export async function fetchRental(id: number): Promise<any | null> {
   const res = await fetch(`${API_BASE}/rentals/${id}`, { headers: headers() })
   if (!res.ok) return null

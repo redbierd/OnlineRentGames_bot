@@ -105,20 +105,22 @@ export default function AdminUserDetail() {
             <button onClick={() => setTab('completed')} className={`flex-1 py-3 text-xs font-medium ${tab === 'completed' ? 'text-accent border-b-2 border-accent' : 'text-text-muted'}`}>Завершённые ({completedRentals.length})</button>
           </div>
           <div className="p-4 space-y-2">
-            <button onClick={() => setShowAddRental(true)} className="w-full py-2.5 rounded-lg bg-accent text-white text-xs font-semibold active:opacity-80 mb-3">+ Выдать аренду вручную</button>
             {tab === 'active' ? (
-              activeRentals.length === 0 ? <p className="text-sm text-text-muted text-center py-4">Нет активных аренд</p> :
-              activeRentals.map(r => (
-                <div key={r.id} className="bg-surface-3 rounded-lg p-3">
-                  <div className="flex items-start justify-between mb-2">
-                    <div><p className="text-xs text-text-muted">{r.game_name}</p><p className="text-sm font-semibold">{r.account_title}</p></div>
-                    <span className="text-[10px] font-medium px-2 py-0.5 rounded-full text-success bg-success/10">Активна</span>
+              <>
+                <button onClick={() => setShowAddRental(true)} className="w-full py-2.5 rounded-lg bg-accent text-white text-xs font-semibold active:opacity-80 mb-2">+ Выдать аренду вручную</button>
+                {activeRentals.length === 0 ? <p className="text-sm text-text-muted text-center py-4">Нет активных аренд</p> :
+                activeRentals.map(r => (
+                  <div key={r.id} className="bg-surface-3 rounded-lg p-3">
+                    <div className="flex items-start justify-between mb-2">
+                      <div><p className="text-xs text-text-muted">{r.game_name}</p><p className="text-sm font-semibold">{r.account_title}</p></div>
+                      <span className="text-[10px] font-medium px-2 py-0.5 rounded-full text-success bg-success/10">Активна</span>
+                    </div>
+                    <p className="text-xs text-accent mb-1">{r.hours}ч · {r.price}₽</p>
+                    <p className="text-xs text-text-muted">До: {new Date(r.expires_at).toLocaleString('ru-RU')}</p>
+                    <button onClick={() => handleComplete(r.id)} className="mt-2 w-full py-2 rounded-lg bg-danger/10 text-xs font-medium text-danger active:bg-danger/20">Завершить досрочно</button>
                   </div>
-                  <p className="text-xs text-accent mb-1">{r.hours}ч · {r.price}₽</p>
-                  <p className="text-xs text-text-muted">До: {new Date(r.expires_at).toLocaleString('ru-RU')}</p>
-                  <button onClick={() => handleComplete(r.id)} className="mt-2 w-full py-2 rounded-lg bg-danger/10 text-xs font-medium text-danger active:bg-danger/20">⛔ Завершить досрочно</button>
-                </div>
-              ))
+                ))}
+              </>
             ) : (
               completedRentals.length === 0 ? <p className="text-sm text-text-muted text-center py-4">Нет завершённых аренд</p> :
               completedRentals.map(r => (
