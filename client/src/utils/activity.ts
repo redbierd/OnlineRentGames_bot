@@ -1,13 +1,5 @@
-import { trackActivityAPI, trackTimeAPI } from '../api/server'
-
 const SESSION_KEY = 'gamerent_session'
 const ACTIVITY_KEY = 'gamerent_activity'
-
-function getUserId(): string {
-  const tg = (window as any).Telegram?.WebApp?.initDataUnsafe?.user
-  if (tg?.id) return String(tg.id)
-  return localStorage.getItem('tg_user_id') || ''
-}
 
 function getActivity() {
   try { return JSON.parse(localStorage.getItem(ACTIVITY_KEY) || '{}') } catch { return {} }
@@ -22,35 +14,25 @@ export function trackOpen() {
   a.opened_miniapp = true
   a.session_start = Date.now()
   saveActivity(a)
-  const uid = getUserId()
-  if (uid) trackActivityAPI(uid, 'opened_miniapp')
 }
 
 export function trackAcceptTerms() {
   const a = getActivity()
   a.accepted_terms = true
   saveActivity(a)
-  const uid = getUserId()
-  if (uid) trackActivityAPI(uid, 'accepted_terms')
 }
 
 export function trackBrowseMenu() {
   const a = getActivity()
   a.browsed_menu = true
   saveActivity(a)
-  const uid = getUserId()
-  if (uid) trackActivityAPI(uid, 'browsed_menu')
 }
 
 export function trackPageVisit(page: string) {
   const a = getActivity()
   if (!a.pages_visited) a.pages_visited = []
   if (!a.pages_visited.includes(page)) a.pages_visited.push(page)
-  if (a.pages_visited.length >= 3) {
-    a.browsed_menu = true
-    const uid = getUserId()
-    if (uid) trackActivityAPI(uid, 'browsed_menu')
-  }
+  if (a.pages_visited.length >= 3) a.browsed_menu = true
   saveActivity(a)
 }
 
@@ -61,8 +43,6 @@ export function trackTime() {
   a.total_time_seconds = (a.total_time_seconds || 0) + elapsed
   a.session_start = Date.now()
   saveActivity(a)
-  const uid = getUserId()
-  if (uid && elapsed > 0) trackTimeAPI(uid, elapsed)
 }
 
 export function formatTime(seconds: number): string {

@@ -9,36 +9,44 @@ export interface Game {
 
 export interface Account {
   id: number
-  game_id: number
-  title: string
-  description: string
-  price_per_day: number
-  rank: string
-  status: 'available' | 'rented'
-  owner_id?: string
-  owner_type?: 'platform' | 'user'
-}
-
-export interface Order {
-  id: number
-  account_id: number
+  owner_id: string
+  owner_username: string
   game_id: number
   game_name: string
-  game_slug: string
-  account_title: string
-  user_id: string
-  username: string
-  rental_days: number
-  total_price: number
-  status: 'active' | 'completed' | 'pending'
-  created_at: string
-  expires_at: string
-  credentials?: AccountCredentials
-}
-
-export interface AccountCredentials {
+  title: string
+  description: string
+  extra_info: string
+  rank: string
   login: string
   password: string
+  price_per_hour: number
+  status: 'pending_moderation' | 'available' | 'rented' | 'waiting_password_change' | 'suspended' | 'rejected'
+  created_at: string
+  approved_at?: string
+  rejection_reason?: string
+  admin_comment?: string
+}
+
+export interface Rental {
+  id: number
+  account_id: number
+  owner_id: string
+  renter_id: string
+  renter_username: string
+  game_id: number
+  game_name: string
+  account_title: string
+  hours: number
+  price: number
+  status: 'active' | 'completed'
+  started_at: string
+  expires_at: string
+  created_at: string
+  ended_at?: string
+  ended_by?: string
+  end_reason?: string
+  ten_min_warning: boolean
+  payment_source: string
 }
 
 export interface UserProfile {
@@ -46,34 +54,7 @@ export interface UserProfile {
   first_name: string
   last_name?: string
   username?: string
-  photo_url?: string
-  total_orders: number
-  total_hours: number
-  total_spent: number
-  favorite_game: string
+  role: 'USER' | 'ADMIN'
   level: number
-  xp: number
-  xp_to_next: number
-}
-
-export type ListingStatus = 'pending' | 'approved' | 'rejected' | 'suspended'
-
-export interface ListingApplication {
-  id: number
-  user_id: string
-  username: string
-  game_id: number
-  game_name: string
-  title: string
-  description: string
-  extra_info: string
-  price_per_day: number
-  rank: string
-  credentials: AccountCredentials
-  status: ListingStatus
-  rejection_reason: string
-  admin_comment: string
   created_at: string
-  reviewed_at: string
-  reviewed_by: string
 }

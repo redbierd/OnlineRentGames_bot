@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react'
 import { ADMIN_TELEGRAM_ID } from '../config'
+import { fetchCurrentUser } from '../api/server'
 
 export function useAuth() {
-  const [userId, setUserId] = useState<string>('')
-  const [username, setUsername] = useState<string>('')
-  const [firstName, setFirstName] = useState<string>('')
+  const [userId, setUserId] = useState('')
+  const [username, setUsername] = useState('')
+  const [firstName, setFirstName] = useState('')
   const [ready, setReady] = useState(false)
 
   useEffect(() => {
@@ -13,18 +14,12 @@ export function useAuth() {
       setUserId(String(tg.id))
       setUsername(tg.username || '')
       setFirstName(tg.first_name || '')
+      localStorage.setItem('tg_user_id', String(tg.id))
       setReady(true)
     } else {
-      // Fallback: check URL param or localStorage
-      const params = new URLSearchParams(window.location.search)
-      const paramId = params.get('user_id')
-      const storedId = localStorage.getItem('tg_user_id')
-      const id = paramId || storedId || ''
-      if (id) {
-        setUserId(id)
-        localStorage.setItem('tg_user_id', id)
-      }
-      setReady(true)
+      const stored = localStorage.getItem('tg_user_id')
+      if (stored) { setUserId(stored); setReady(true) }
+      else setReady(true)
     }
   }, [])
 

@@ -1,210 +1,125 @@
-import type { ListingApplication, ListingStatus } from '../types'
-
 const API_BASE = '/api'
 
-// ── Listings API ──
-
-export async function submitListing(userId: string, username: string, data: {
-  game_id: number; game_name?: string; title: string; description: string;
-  extra_info: string; price_per_day: number; rank: string; login: string; password: string;
-}): Promise<ListingApplication> {
-  const res = await fetch(`${API_BASE}/listings`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ user_id: userId, username, ...data }),
-  })
-  if (!res.ok) throw new Error('Failed to submit listing')
-  return res.json()
+function headers(extra?: Record<string, string>): HeadersInit {
+  const userId = getUserId()
+  return { 'Content-Type': 'application/json', 'x-user-id': userId, ...extra }
 }
 
-export async function getMyListings(userId: string): Promise<ListingApplication[]> {
-  const res = await fetch(`${API_BASE}/listings?user_id=${userId}`)
-  if (!res.ok) return []
-  return res.json()
+function getUserId(): string {
+  const tg = (window as any).Telegram?.WebApp?.initDataUnsafe?.user
+  if (tg?.id) return String(tg.id)
+  return localStorage.getItem('tg_user_id') || ''
 }
 
-export async function adminGetListings(adminId: string, status?: ListingStatus): Promise<ListingApplication[]> {
-  const url = status ? `${API_BASE}/listings?status=${status}` : `${API_BASE}/listings`
-  const res = await fetch(url)
-  if (!res.ok) return []
-  return res.json()
-}
-
-export async function adminGetListing(adminId: string, listingId: number): Promise<ListingApplication | null> {
-  const res = await fetch(`${API_BASE}/listings/${listingId}`)
+// ── Users ──
+export async function fetchCurrentUser(): Promise<any> {
+  const res = await fetch(`${API_BASE}/users/me`, { headers: headers() })
   if (!res.ok) return null
   return res.json()
 }
 
-export async function adminApproveListing(adminId: string, listingId: number): Promise<ListingApplication> {
-  const res = await fetch(`${API_BASE}/listings/${listingId}/approve`, { method: 'POST' })
-  if (!res.ok) throw new Error('Failed to approve')
-  return res.json()
-}
-
-export async function adminRejectListing(adminId: string, listingId: number, reason: string, comment: string): Promise<ListingApplication> {
-  const res = await fetch(`${API_BASE}/listings/${listingId}/reject`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ reason, comment }),
-  })
-  if (!res.ok) throw new Error('Failed to reject')
-  return res.json()
-}
-
-export async function adminSuspendListing(adminId: string, listingId: number, reason: string): Promise<ListingApplication> {
-  const res = await fetch(`${API_BASE}/listings/${listingId}/suspend`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ reason }),
-  })
-  if (!res.ok) throw new Error('Failed to suspend')
-  return res.json()
-}
-
-// ── Activity API ──
-
-export async function trackActivityAPI(userId: string, field: string) {
-  try {
-    await fetch(`${API_BASE}/activity`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ user_id: userId, field }),
-    })
-  } catch {}
-}
-
-export async function trackTimeAPI(userId: string, seconds: number) {
-  try {
-    await fetch(`${API_BASE}/activity/time`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ user_id: userId, seconds }),
-    })
-  } catch {}
-}
-
-export async function acceptTermsAPI(userId: string, version: string) {
-  try {
-    await fetch(`${API_BASE}/terms/accept`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ user_id: userId, version }),
-    })
-  } catch {}
-}
-
-// ── Accounts API ──
-
-export async function fetchAccountsFromServer(gameId?: number): Promise<any[]> {
-  const url = gameId ? `${API_BASE}/accounts?game_id=${gameId}` : `${API_BASE}/accounts`
-  const res = await fetch(url)
-  if (!res.ok) return []
-  return res.json()
-}
-
-export async function fetchAccountFromServer(id: number): Promise<any | null> {
-  const res = await fetch(`${API_BASE}/accounts/${id}`)
-  if (!res.ok) return null
-  return res.json()
-}
-
-// ── Users API ──
-
-export async function fetchBotUsers(): Promise<any[]> {
-  const res = await fetch(`${API_BASE}/users`)
+export async function fetchAllUsers(): Promise<any[]> {
+  const res = await fetch(`${API_BASE}/users`, { headers: headers({ 'x-admin': '1' }) })
   if (!res.ok) return []
   return res.json()
 }
 
 export async function updateUserLevel(userId: string, level: number): Promise<any> {
-  const res = await fetch(`${API_BASE}/users/${userId}/level`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ level }),
-  })
-  if (!res.ok) throw new Error('Failed to update level')
+  const res = await fetch(`${API_BASE}/users/${userId}/level`, { method: 'POST', headers: headers({ 'x-admin': '1' }), body: JSON.stringify({ level }) })
+  if (!res.ok) throw new Error('Failed')
   return res.json()
 }
 
-// ── Admin Orders API ──
-
-export async function adminCreateOrderOnServer(userId: string, accountId: number, hours: number): Promise<any> {
-  const res = await fetch(`${API_BASE}/admin/orders`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ user_id: userId, account_id: accountId, hours }),
-  })
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}))
-    throw new Error(err.error || 'Failed to create order')
-  }
-  return res.json()
-}
-
-// ── My Accounts API ──
-
-export async function fetchMyAccounts(userId: string): Promise<any[]> {
-  const res = await fetch(`${API_BASE}/my-accounts/${userId}`)
+// ── Accounts (catalog) ──
+export async function fetchCatalogAccounts(gameId?: number): Promise<any[]> {
+  let url = `${API_BASE}/accounts`
+  if (gameId) url += `?game_id=${gameId}`
+  const res = await fetch(url, { headers: headers() })
   if (!res.ok) return []
   return res.json()
 }
 
-// ── Game Stats API ──
+export async function fetchAccountById(id: number): Promise<any | null> {
+  const res = await fetch(`${API_BASE}/accounts/${id}`, { headers: headers() })
+  if (!res.ok) return null
+  return res.json()
+}
+
+export async function fetchMyAccounts(): Promise<any[]> {
+  const res = await fetch(`${API_BASE}/my-accounts`, { headers: headers() })
+  if (!res.ok) return []
+  return res.json()
+}
+
+export async function updateAccountPassword(accountId: number, password: string): Promise<any> {
+  const res = await fetch(`${API_BASE}/accounts/${accountId}/update-password`, { method: 'POST', headers: headers(), body: JSON.stringify({ password }) })
+  if (!res.ok) throw new Error('Failed')
+  return res.json()
+}
 
 export async function fetchGameStats(): Promise<Record<number, { total: number; available: number; min_price: number }>> {
-  const res = await fetch(`${API_BASE}/games/stats`)
+  const res = await fetch(`${API_BASE}/games/stats`, { headers: headers() })
   if (!res.ok) return {}
   return res.json()
 }
 
-// ── Rental Requests API ──
-
-export async function createRentalRequest(requesterId: string, requesterUsername: string, accountId: number, hours: number): Promise<any> {
-  const res = await fetch(`${API_BASE}/rental-requests`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ requester_id: requesterId, requester_username: requesterUsername, account_id: accountId, hours }),
-  })
-  if (!res.ok) throw new Error('Failed to create request')
+// ── Moderation ──
+export async function submitAccount(data: any): Promise<any> {
+  const res = await fetch(`${API_BASE}/accounts/submit`, { method: 'POST', headers: headers(), body: JSON.stringify(data) })
+  if (!res.ok) throw new Error('Failed')
   return res.json()
 }
 
-export async function fetchRentalRequests(userId?: string, status?: string): Promise<any[]> {
-  let url = `${API_BASE}/rental-requests`
-  const params = []
-  if (userId) params.push(`user_id=${userId}`)
-  if (status) params.push(`status=${status}`)
-  if (params.length) url += '?' + params.join('&')
-  const res = await fetch(url)
+export async function fetchModeration(status?: string): Promise<any[]> {
+  let url = `${API_BASE}/moderation`
+  if (status) url += `?status=${status}`
+  const res = await fetch(url, { headers: headers({ 'x-admin': '1' }) })
   if (!res.ok) return []
   return res.json()
 }
 
-export async function approveRentalRequest(requestId: number): Promise<any> {
-  const res = await fetch(`${API_BASE}/rental-requests/${requestId}/approve`, { method: 'POST' })
-  if (!res.ok) throw new Error('Failed to approve')
+export async function approveAccount(id: number): Promise<any> {
+  const res = await fetch(`${API_BASE}/moderation/${id}/approve`, { method: 'POST', headers: headers({ 'x-admin': '1' }) })
+  if (!res.ok) throw new Error('Failed')
   return res.json()
 }
 
-export async function rejectRentalRequest(requestId: number, reason: string): Promise<any> {
-  const res = await fetch(`${API_BASE}/rental-requests/${requestId}/reject`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ reason }),
-  })
-  if (!res.ok) throw new Error('Failed to reject')
+export async function rejectAccount(id: number, reason: string, comment: string): Promise<any> {
+  const res = await fetch(`${API_BASE}/moderation/${id}/reject`, { method: 'POST', headers: headers({ 'x-admin': '1' }), body: JSON.stringify({ reason, comment }) })
+  if (!res.ok) throw new Error('Failed')
   return res.json()
 }
 
-// ── Password Update API ──
+// ── Rentals ──
+export async function fetchMyRentals(): Promise<any[]> {
+  const res = await fetch(`${API_BASE}/rentals`, { headers: headers() })
+  if (!res.ok) return []
+  return res.json()
+}
 
-export async function updateAccountPassword(accountId: number, userId: string, newPassword: string): Promise<any> {
-  const res = await fetch(`${API_BASE}/accounts/${accountId}/password`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ password: newPassword, owner_id: userId }),
-  })
-  if (!res.ok) throw new Error('Failed to update password')
+export async function fetchRental(id: number): Promise<any | null> {
+  const res = await fetch(`${API_BASE}/rentals/${id}`, { headers: headers() })
+  if (!res.ok) return null
+  return res.json()
+}
+
+export async function createRental(accountId: number, hours: number): Promise<any> {
+  const res = await fetch(`${API_BASE}/rentals`, { method: 'POST', headers: headers(), body: JSON.stringify({ account_id: accountId, hours }) })
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}))
+    throw new Error(err.error || 'Failed')
+  }
+  return res.json()
+}
+
+export async function extendRental(rentalId: number, hours: number): Promise<any> {
+  const res = await fetch(`${API_BASE}/rentals/${rentalId}/extend`, { method: 'POST', headers: headers(), body: JSON.stringify({ hours }) })
+  if (!res.ok) throw new Error('Failed')
+  return res.json()
+}
+
+export async function completeRental(rentalId: number, reason: string): Promise<any> {
+  const res = await fetch(`${API_BASE}/rentals/${rentalId}/complete`, { method: 'POST', headers: headers({ 'x-admin': '1' }), body: JSON.stringify({ reason }) })
+  if (!res.ok) throw new Error('Failed')
   return res.json()
 }

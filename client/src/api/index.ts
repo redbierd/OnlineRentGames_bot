@@ -1,69 +1,29 @@
-import { games, mockOrders, mockUser } from '../data'
-import type { Game, Account, Order, UserProfile, AccountCredentials } from '../types'
-import { fetchAccountsFromServer } from './server'
-
-export { getMyListings } from './admin'
+import { games } from '../data'
+import type { Game } from '../types'
+import { fetchCatalogAccounts, fetchAccountById as fetchAccountByIdServer, fetchMyRentals, fetchCurrentUser } from './server'
 
 export async function fetchGames(): Promise<Game[]> {
   return games
 }
 
-export async function fetchAccounts(gameId: number): Promise<Account[]> {
-  try {
-    const serverAccounts = await fetchAccountsFromServer(gameId)
-    if (serverAccounts.length > 0) return serverAccounts
-  } catch {}
-  return []
+export async function fetchAccounts(gameId: number) {
+  return fetchCatalogAccounts(gameId)
 }
 
-export async function fetchAccountById(id: number): Promise<{ account: Account; gameName: string } | null> {
-  try {
-    const allAccounts = await fetchAccountsFromServer()
-    const account = allAccounts.find((a: any) => a.id === id)
-    if (account) {
-      const game = games.find((g) => g.id === account.game_id)
-      return { account, gameName: game?.name || '' }
-    }
-  } catch {}
-  return null
+export async function fetchAccountById(id: number) {
+  const acc = await fetchAccountByIdServer(id)
+  if (!acc) return null
+  const game = games.find(g => g.id === acc.game_id)
+  return { account: acc, gameName: game?.name || '' }
 }
 
-export async function fetchOrders(): Promise<Order[]> {
-  try {
-    const res = await fetch('/api/orders')
-    if (res.ok) return res.json()
-  } catch {}
-  return mockOrders
+export async function fetchOrders() {
+  return fetchMyRentals()
 }
 
-export async function fetchOrderById(orderId: number): Promise<Order | null> {
-  try {
-    const orders = await fetchOrders()
-    return orders.find((o: any) => o.id === orderId) || null
-  } catch {}
-  return null
-}
-
-export async function fetchOrderCredentials(orderId: number): Promise<AccountCredentials | null> {
-  const order = await fetchOrderById(orderId)
-  return order?.credentials || null
-}
-
-export async function fetchUser(): Promise<UserProfile> {
-  const tg = (window as any).Telegram?.WebApp?.initDataUnsafe?.user
-  if (tg?.id) {
-    return {
-      ...mockUser,
-      id: String(tg.id),
-      first_name: tg.first_name || 'Игрок',
-      last_name: tg.last_name,
-      username: tg.username,
-      photo_url: tg.photo_url,
-    }
-  }
-  const storedId = localStorage.getItem('tg_user_id')
-  if (storedId) {
-    return { ...mockUser, id: storedId }
-  }
-  return mockUser
+export async function fetchUser() {
+  const user = await fetchCurrentUser()
+  if (user) return user
+  // Fallback
+  return { id: '', first_name: 'Игрок', role: 'USER', level: 1, created_at: '' }
 }
