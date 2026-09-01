@@ -46,12 +46,12 @@ export default function AccountsPage() {
 
       {/* Game Banner */}
       <div
-        className="p-5 flex items-center justify-between"
-        style={{ background: `linear-gradient(135deg, ${game.color}25, transparent)` }}
+        className="px-5 py-4 flex items-center justify-between"
+        style={{ background: `linear-gradient(135deg, ${game.color}18, transparent)` }}
       >
         <div>
-          <h2 className="text-xl font-bold">{game.name}</h2>
-          <p className="text-sm text-text-secondary mt-0.5">
+          <h2 className="text-lg font-bold tracking-tight">{game.name}</h2>
+          <p className="text-[12px] text-text-secondary mt-0.5">
             {available.length > 0
               ? `${available.length} аккаунтов · от ${minPrice}₽/час`
               : 'Нет доступных аккаунтов'}

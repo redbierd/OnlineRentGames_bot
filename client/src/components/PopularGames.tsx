@@ -14,10 +14,10 @@ export default function PopularGames({ games, onSelect }: { games: Game[]; onSel
 
   return (
     <div className="mb-5">
-      <div className="px-5 mb-2.5">
-        <h3 className="text-[13px] font-semibold text-text-secondary">Популярные игры</h3>
+      <div className="px-5 mb-3">
+        <h3 className="text-[13px] font-semibold text-text-secondary tracking-wide">Популярные игры</h3>
       </div>
-      <div className="flex gap-2.5 overflow-x-auto px-5 pb-1 scrollbar-hide" style={{ scrollbarWidth: 'none' }}>
+      <div className="flex gap-3 overflow-x-auto px-5 pb-1 scrollbar-hide" style={{ scrollbarWidth: 'none' }}>
         {games.map((game, i) => {
           const s = stats[game.id]
           const available = s?.available ?? 0
@@ -28,21 +28,21 @@ export default function PopularGames({ games, onSelect }: { games: Game[]; onSel
             <button
               key={game.id}
               onClick={() => onSelect(game.slug)}
-              className={`shrink-0 w-[140px] rounded-xl overflow-hidden text-left transition-all active:scale-95 animate-fade-in ${unavailable ? 'opacity-50' : ''}`}
-              style={{ animationDelay: `${i * 50}ms` }}
+              className={`shrink-0 w-[145px] rounded-2xl overflow-hidden text-left transition-all active:scale-[0.97] animate-fade-in ${unavailable ? 'opacity-40' : ''}`}
+              style={{ animationDelay: `${i * 60}ms` }}
             >
               <div
-                className="h-[100px] flex flex-col justify-end p-3 relative"
-                style={{ background: `linear-gradient(160deg, ${game.color}35, ${game.color}10)` }}
+                className="h-[105px] flex flex-col justify-end p-3.5 relative"
+                style={{ background: `linear-gradient(155deg, ${game.color}30 0%, ${game.color}08 100%)` }}
               >
-                <div className="absolute top-2.5 right-2.5 w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: `${game.color}20` }}>
-                  <div className="w-2.5 h-2.5 rounded-full" style={{ background: game.color }} />
+                <div className="absolute top-3 right-3 w-6 h-6 rounded-md flex items-center justify-center" style={{ background: `${game.color}18` }}>
+                  <div className="w-2 h-2 rounded-full" style={{ background: game.color, opacity: 0.8 }} />
                 </div>
-                <p className="text-[13px] font-bold leading-tight">{game.name}</p>
+                <p className="text-[13px] font-bold leading-tight tracking-tight">{game.name}</p>
                 {!loaded ? (
                   <div className="h-2.5 w-16 skeleton rounded mt-1.5" />
                 ) : available > 0 ? (
-                  <p className="text-[10px] text-text-secondary mt-1">
+                  <p className="text-[10px] text-text-secondary mt-1 font-medium">
                     {available} акк. · от {minPrice}₽/ч
                   </p>
                 ) : (

@@ -4,17 +4,17 @@ export default function AccountCard({ account, onClick }: { account: Account; on
   return (
     <button
       onClick={onClick}
-      className="w-full rounded-xl bg-surface-2 border border-white/5 p-4 text-left transition-all active:scale-[0.98] hover:border-white/10"
+      className="w-full card-interactive p-4 text-left"
     >
       <div className="flex items-start justify-between gap-3">
         <div className="flex-1 min-w-0">
-          <h3 className="text-sm font-semibold truncate">{account.title}</h3>
-          <p className="text-xs text-accent mt-0.5">{account.rank}</p>
-          <p className="text-xs text-text-muted mt-1.5 line-clamp-2">{account.description}</p>
+          <h3 className="text-[13px] font-semibold truncate leading-tight">{account.title}</h3>
+          <p className="text-[11px] text-accent font-medium mt-1">{account.rank}</p>
+          <p className="text-[11px] text-text-muted mt-1.5 line-clamp-2 leading-relaxed">{account.description}</p>
         </div>
         <div className="text-right shrink-0">
-          <p className="text-lg font-bold text-accent">{account.price_per_hour}₽</p>
-          <p className="text-[10px] text-text-muted">в час</p>
+          <p className="text-lg font-bold text-accent leading-none">{account.price_per_hour}₽</p>
+          <p className="text-[10px] text-text-muted mt-0.5">в час</p>
         </div>
       </div>
     </button>
