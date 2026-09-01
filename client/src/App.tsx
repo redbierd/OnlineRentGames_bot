@@ -14,6 +14,7 @@ import AccountsPage from './pages/AccountsPage'
 import RentPage from './pages/RentPage'
 import RentalDetailPage from './pages/RentalDetailPage'
 import MyListingsPage from './pages/MyListingsPage'
+import SellerPage from './pages/SellerPage'
 import AdminDashboard from './pages/admin/AdminDashboard'
 import AdminUsers from './pages/admin/AdminUsers'
 import AdminUserDetail from './pages/admin/AdminUserDetail'
@@ -77,6 +78,7 @@ export default function App() {
         <Route path="/" element={<HomePage />} />
         <Route path="/games" element={<GamesPage />} />
         <Route path="/rentals" element={<MyRentalsPage />} />
+        <Route path="/seller" element={<SellerPage />} />
         <Route path="/profile" element={<ProfilePage />} />
         <Route path="/game/:slug" element={<AccountsPage />} />
         <Route path="/rent/:accountId" element={<RentPage />} />

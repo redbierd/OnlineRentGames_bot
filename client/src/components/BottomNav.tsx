@@ -4,6 +4,7 @@ const tabs = [
   { path: '/', label: 'Главная', icon: HomeIcon },
   { path: '/games', label: 'Игры', icon: GamesIcon },
   { path: '/rentals', label: 'Аренды', icon: RentalsIcon },
+  { path: '/seller', label: 'Сдаю', icon: SellerIcon },
   { path: '/profile', label: 'Профиль', icon: ProfileIcon },
 ]
 
@@ -23,7 +24,7 @@ export default function BottomNav() {
             <button
               key={tab.path}
               onClick={() => navigate(tab.path)}
-              className="flex flex-col items-center gap-0.5 px-4 py-1.5 transition-colors relative"
+              className="flex flex-col items-center gap-0.5 px-3 py-1.5 transition-colors relative"
             >
               {active && (
                 <div className="absolute -top-px left-1/2 -translate-x-1/2 w-8 h-0.5 bg-accent rounded-full" />
@@ -69,6 +70,15 @@ function RentalsIcon({ active }: { active: boolean }) {
       <line x1="8" y1="2" x2="8" y2="6" />
       <line x1="3" y1="10" x2="21" y2="10" />
       {active && <circle cx="12" cy="16" r="1.5" fill="currentColor" />}
+    </svg>
+  )
+}
+
+function SellerIcon({ active }: { active: boolean }) {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <line x1="12" y1="1" x2="12" y2="23" />
+      <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
     </svg>
   )
 }
