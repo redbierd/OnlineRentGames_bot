@@ -1,10 +1,10 @@
 import { useState } from 'react'
 import type { Game } from '../types'
 
-const GAME_META: Record<string, { icon: string; desc: string; minPrice: number }> = {
-  valorant: { icon: '🎯', desc: 'Тактический шутер 5v5 от Riot Games', minPrice: 50 },
-  fortnite: { icon: '🪂', desc: 'Королевская битва с уникальным строительством', minPrice: 80 },
-  cs2: { icon: '💥', desc: 'Легендарный тактический шутер от Valve', minPrice: 60 },
+const GAME_META: Record<string, { desc: string }> = {
+  valorant: { desc: 'Тактический шутер 5v5 от Riot Games' },
+  fortnite: { desc: 'Королевская битва с уникальным строительством' },
+  cs2: { desc: 'Легендарный тактический шутер от Valve' },
 }
 
 export default function RandomGame({ games, onSelect }: { games: Game[]; onSelect: (slug: string) => void }) {
@@ -16,33 +16,29 @@ export default function RandomGame({ games, onSelect }: { games: Game[]; onSelec
   }
 
   if (suggestion) {
-    const meta = GAME_META[suggestion.slug] || { icon: '🎮', desc: '', minPrice: 0 }
+    const meta = GAME_META[suggestion.slug] || { desc: '' }
     return (
-      <div className="rounded-xl bg-surface-2 border border-white/5 p-4 animate-fade-in">
+      <div className="rounded-xl bg-surface-2/60 border border-white/[0.04] p-4 animate-fade-in">
         <div className="flex items-start gap-3 mb-3">
-          <div
-            className="w-12 h-12 rounded-lg flex items-center justify-center text-2xl shrink-0"
-            style={{ background: `${suggestion.color}20` }}
-          >
-            {meta.icon}
+          <div className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0" style={{ background: `${suggestion.color}15` }}>
+            <div className="w-3 h-3 rounded-full" style={{ background: suggestion.color }} />
           </div>
           <div className="min-w-0">
-            <p className="text-xs text-text-muted mb-0.5">Рекомендуем</p>
-            <p className="font-bold">{suggestion.name}</p>
-            <p className="text-xs text-text-secondary mt-0.5">{meta.desc}</p>
-            <p className="text-xs text-accent mt-1">от {meta.minPrice}₽/день</p>
+            <p className="text-[10px] text-text-muted mb-0.5">Рекомендуем</p>
+            <p className="text-[13px] font-bold">{suggestion.name}</p>
+            <p className="text-[11px] text-text-secondary mt-0.5">{meta.desc}</p>
           </div>
         </div>
         <div className="flex gap-2">
           <button
             onClick={() => onSelect(suggestion.slug)}
-            className="flex-1 py-2.5 rounded-lg bg-accent text-white text-sm font-semibold active:opacity-80 transition-opacity"
+            className="flex-1 py-2.5 rounded-lg bg-accent text-white text-[12px] font-semibold active:opacity-80 transition-opacity"
           >
             Посмотреть аккаунты
           </button>
           <button
             onClick={pick}
-            className="px-4 py-2.5 rounded-lg bg-surface-3 text-xs text-text-secondary active:bg-surface transition-colors"
+            className="px-4 py-2.5 rounded-lg bg-surface-3/60 text-[12px] text-text-secondary active:bg-surface-3 transition-colors"
           >
             Другую
           </button>
@@ -54,9 +50,9 @@ export default function RandomGame({ games, onSelect }: { games: Game[]; onSelec
   return (
     <button
       onClick={pick}
-      className="w-full py-3 rounded-xl bg-surface-2 border border-white/5 text-sm text-text-secondary font-medium active:bg-surface-3 transition-colors"
+      className="w-full py-3 rounded-xl bg-surface-2/40 border border-white/[0.03] text-[13px] text-text-muted font-medium active:bg-surface-2 transition-colors"
     >
-      🎲 Не знаю, во что играть
+      Не знаю, во что играть
     </button>
   )
 }

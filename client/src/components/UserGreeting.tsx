@@ -6,7 +6,7 @@ export default function UserGreeting({ user }: { user: UserProfile }) {
 
   return (
     <div className="flex items-center gap-3 animate-fade-in">
-      <div className="w-11 h-11 rounded-full bg-accent/20 flex items-center justify-center text-accent font-bold text-lg shrink-0 overflow-hidden">
+      <div className="w-9 h-9 rounded-full bg-accent/15 flex items-center justify-center text-accent font-bold text-sm shrink-0 overflow-hidden">
         {user.photo_url ? (
           <img src={user.photo_url} alt="" className="w-full h-full object-cover" />
         ) : (
@@ -14,8 +14,8 @@ export default function UserGreeting({ user }: { user: UserProfile }) {
         )}
       </div>
       <div className="min-w-0">
-        <p className="text-xs text-text-secondary">{greeting}</p>
-        <p className="text-base font-semibold truncate">{user.first_name}</p>
+        <p className="text-[11px] text-text-muted">{greeting}</p>
+        <p className="text-[15px] font-semibold truncate leading-tight">{user.first_name}</p>
       </div>
     </div>
   )
