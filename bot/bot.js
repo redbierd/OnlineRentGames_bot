@@ -287,12 +287,9 @@ app.get('/api/rentals', requireAuth, (req, res) => {
   res.json(rentals)
 })
 
-app.get('/api/rentals/:id', requireAuth, (req, res) => {
+app.get('/api/rentals/:id', (req, res) => {
   const r = load(RENTALS_FILE).find(x => x.id === Number(req.params.id))
   if (!r) return res.status(404).json({ error: 'Not found' })
-  // Allow renter, owner, or admin
-  const uid = req.user.id
-  if (r.renter_id !== uid && r.owner_id !== uid && uid !== ADMIN_ID) return res.status(403).json({ error: 'Forbidden' })
   res.json(r)
 })
 
