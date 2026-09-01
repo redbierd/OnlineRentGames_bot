@@ -13,7 +13,7 @@ const EXTEND_OPTIONS = [
 ]
 
 export default function RentalDetailPage() {
-  const { rentalId } = useParams<{ rentalId: string }>()
+  const { orderId: rentalId } = useParams<{ orderId: string }>()
   const { userId } = useAuth()
   const navigate = useNavigate()
   const [rental, setRental] = useState<Rental | null>(null)
