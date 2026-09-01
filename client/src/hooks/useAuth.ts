@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react'
 import { ADMIN_TELEGRAM_ID } from '../config'
-import { fetchCurrentUser } from '../api/server'
 
 export function useAuth() {
   const [userId, setUserId] = useState('')
@@ -15,12 +14,12 @@ export function useAuth() {
       setUsername(tg.username || '')
       setFirstName(tg.first_name || '')
       localStorage.setItem('tg_user_id', String(tg.id))
-      setReady(true)
     } else {
+      // Fallback for testing outside Telegram
       const stored = localStorage.getItem('tg_user_id')
-      if (stored) { setUserId(stored); setReady(true) }
-      else setReady(true)
+      if (stored) setUserId(stored)
     }
+    setReady(true)
   }, [])
 
   const isAdmin = userId === ADMIN_TELEGRAM_ID

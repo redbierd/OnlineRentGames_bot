@@ -22,7 +22,6 @@ import AdminRentals from './pages/admin/AdminRentals'
 import AdminGames from './pages/admin/AdminGames'
 import AdminModeration from './pages/admin/AdminModeration'
 import AdminListingDetail from './pages/admin/AdminListingDetail'
-import AdminRentalRequests from './pages/admin/AdminRentalRequests'
 
 function ActivityTracker() {
   const location = useLocation()
@@ -37,13 +36,35 @@ function ActivityTracker() {
 }
 
 export default function App() {
-  const [termsAccepted, setTermsAccepted] = useState(!needsAcceptance())
+  const [ready, setReady] = useState(false)
+  const [termsAccepted, setTermsAccepted] = useState(true)
 
   useEffect(() => {
     const tg = (window as any).Telegram?.WebApp
     tg?.ready()
     tg?.expand()
+
+    // Wait for Telegram user ID to be available, then check terms
+    const check = () => {
+      const tgUser = tg?.initDataUnsafe?.user
+      if (tgUser?.id) {
+        localStorage.setItem('tg_user_id', String(tgUser.id))
+      }
+      setTermsAccepted(!needsAcceptance())
+      setReady(true)
+    }
+
+    // Small delay to ensure Telegram data is loaded
+    setTimeout(check, 300)
   }, [])
+
+  if (!ready) {
+    return (
+      <div className="flex-1 flex items-center justify-center min-h-screen bg-surface">
+        <div className="w-8 h-8 border-2 border-accent border-t-transparent rounded-full animate-spin" />
+      </div>
+    )
+  }
 
   if (!termsAccepted) {
     return <TermsScreen onAccept={() => setTermsAccepted(true)} />
@@ -70,7 +91,6 @@ export default function App() {
         <Route path="/admin/games" element={<AdminRoute><AdminGames /></AdminRoute>} />
         <Route path="/admin/moderation" element={<AdminRoute><AdminModeration /></AdminRoute>} />
         <Route path="/admin/moderation/:listingId" element={<AdminRoute><AdminListingDetail /></AdminRoute>} />
-        <Route path="/admin/rental-requests" element={<AdminRoute><AdminRentalRequests /></AdminRoute>} />
       </Routes>
       <BottomNav />
     </>

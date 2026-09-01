@@ -34,8 +34,17 @@ bot.setChatMenuButton({ menu_button: { type: 'web_app', text: 'Открыть м
 bot.onText(/\/start/, (msg) => {
   const u = msg.from
   const users = load(USERS_FILE)
-  if (!users.find(x => x.id === String(u.id))) {
-    users.push({ id: String(u.id), first_name: u.first_name || '', last_name: u.last_name || '', username: u.username || '', role: 'USER', level: 1, created_at: new Date().toISOString(), last_seen: new Date().toISOString() })
+  const existing = users.find(x => x.id === String(u.id))
+  if (!existing) {
+    users.push({
+      id: String(u.id), first_name: u.first_name || '', last_name: u.last_name || '',
+      username: u.username || '', role: String(u.id) === ADMIN_ID ? 'ADMIN' : 'USER',
+      level: 1, created_at: new Date().toISOString(), last_seen: new Date().toISOString()
+    })
+    save(USERS_FILE, users)
+  } else {
+    existing.last_seen = new Date().toISOString()
+    if (String(u.id) === ADMIN_ID && existing.role !== 'ADMIN') existing.role = 'ADMIN'
     save(USERS_FILE, users)
   }
   bot.sendMessage(msg.chat.id, '🎮 Добро пожаловать в GameRent!\n\nАрендуй аккаунты или сдавайте свои:', {
@@ -69,6 +78,8 @@ function requireAuth(req, res, next) {
 }
 
 function requireAdmin(req, res, next) {
+  const uid = req.headers['x-user-id']
+  if (uid === ADMIN_ID) { req.user = { id: ADMIN_ID, role: 'ADMIN' }; return next() }
   const user = getUser(req)
   if (!user || user.role !== 'ADMIN') return res.status(403).json({ error: 'Forbidden' })
   req.user = user
