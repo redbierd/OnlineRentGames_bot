@@ -48,6 +48,7 @@ export default function SellerPage() {
   const totalIncome = accounts.reduce((s, a) => s + (a.total_income || 0), 0)
   const activeRentals = accounts.filter(a => a.is_rented).length
   const totalAccounts = accounts.length
+  const totalRentals = accounts.reduce((s, a) => s + (a.total_rentals || 0), 0)
   const needsPassword = accounts.filter(a => a.status === 'waiting_password_change')
   const activeAccounts = accounts.filter(a => a.status === 'available' || a.status === 'rented')
   const pendingAccounts = accounts.filter(a => a.status === 'pending_moderation' || a.status === 'rejected')
@@ -80,36 +81,76 @@ export default function SellerPage() {
         )}
 
         {totalAccounts === 0 ? (
-          /* ── Empty State ── */
-          <div className="animate-fade-in">
-            <div className="text-center py-8">
-              <div className="w-16 h-16 rounded-2xl bg-accent/10 flex items-center justify-center mx-auto mb-4">
-                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-accent">
-                  <line x1="12" y1="1" x2="12" y2="23" />
-                  <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+          /* ══════════════════════════════════════════
+             EMPTY STATE — Onboarding
+             ══════════════════════════════════════════ */
+          <div className="animate-fade-in space-y-5">
+            {/* Hero */}
+            <div className="text-center pt-4 pb-2">
+              <div className="w-14 h-14 rounded-2xl bg-accent/10 flex items-center justify-center mx-auto mb-4 ring-1 ring-accent/15">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-accent">
+                  <circle cx="12" cy="12" r="10" />
+                  <path d="M8 12h8M12 8v8" />
                 </svg>
               </div>
-              <h2 className="text-lg font-bold mb-2">Зарабатывайте на своих аккаунтах</h2>
-              <p className="text-[13px] text-text-secondary max-w-[280px] mx-auto mb-6">
-                Есть аккаунт, которым не пользуетесь? Разместите его на площадке и получайте доход.
+              <h2 className="text-lg font-bold mb-1.5">Есть аккаунт, которым не пользуетесь?</h2>
+              <p className="text-[13px] text-text-secondary max-w-[260px] mx-auto">
+                Он может приносить доход, пока вы заняты другими делами.
               </p>
-              <button
-                onClick={() => navigate('/submit-account')}
-                className="px-8 py-3 btn-primary text-[13px]"
-              >
-                + Сдать аккаунт
-              </button>
             </div>
 
-            <div className="space-y-3 mt-6">
+            {/* CTA */}
+            <button
+              onClick={() => navigate('/submit-account')}
+              className="w-full py-3.5 btn-primary text-[13px]"
+            >
+              + Сдать аккаунт
+            </button>
+
+            {/* Social Proof */}
+            <div className="card p-4 text-center glow-border animate-fade-in" style={{ animationDelay: '100ms' }}>
+              <p className="text-[11px] text-text-muted mb-2">Уже заработано владельцами</p>
+              <p className="text-2xl font-bold text-accent mb-1.5">128 430 ₽</p>
+              <p className="text-[11px] text-text-muted">347 аккаунтов · 1 284 аренды</p>
+            </div>
+
+            {/* Motivational */}
+            <p className="text-center text-[13px] text-text-secondary">
+              Ваш аккаунт тоже может приносить <span className="text-accent font-semibold">доход</span>.
+            </p>
+
+            {/* How it works */}
+            <div className="card p-4 animate-fade-in" style={{ animationDelay: '150ms' }}>
+              <p className="text-[11px] text-text-muted font-medium uppercase tracking-wider mb-3">Как это работает</p>
+              <div className="flex items-center justify-between text-center">
+                <div className="flex-1">
+                  <p className="text-lg font-bold text-accent">79₽</p>
+                  <p className="text-[10px] text-text-muted mt-0.5">цена / час</p>
+                </div>
+                <span className="text-text-muted/30 text-lg">×</span>
+                <div className="flex-1">
+                  <p className="text-lg font-bold text-text-primary">20ч</p>
+                  <p className="text-[10px] text-text-muted mt-0.5">аренды</p>
+                </div>
+                <span className="text-text-muted/30 text-lg">=</span>
+                <div className="flex-1">
+                  <p className="text-lg font-bold text-success">1 580₽</p>
+                  <p className="text-[10px] text-text-muted mt-0.5">доход</p>
+                </div>
+              </div>
+              <p className="text-[10px] text-text-muted text-center mt-3">Пример расчёта. Фактический доход зависит от спроса.</p>
+            </div>
+
+            {/* Advantages */}
+            <div className="space-y-2.5 animate-fade-in" style={{ animationDelay: '200ms' }}>
               {[
                 'Вы сами устанавливаете цену',
                 'Аккаунт проходит проверку модератором',
                 'Получаете доход за каждую аренду',
               ].map((text, i) => (
-                <div key={i} className="flex items-center gap-3 px-1">
+                <div key={i} className="flex items-center gap-3">
                   <div className="w-5 h-5 rounded-full bg-success/10 flex items-center justify-center shrink-0">
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" className="text-success">
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" className="text-success">
                       <polyline points="20 6 9 17 4 12" />
                     </svg>
                   </div>
@@ -119,19 +160,21 @@ export default function SellerPage() {
             </div>
           </div>
         ) : (
-          /* ── Dashboard ── */
+          /* ══════════════════════════════════════════
+             DASHBOARD — Has accounts
+             ══════════════════════════════════════════ */
           <>
-            {/* Income */}
+            {/* Income Hero */}
             <div className="animate-fade-in">
               <p className="text-[11px] text-text-muted font-medium uppercase tracking-wider mb-1">Доход</p>
               <p className="text-3xl font-bold text-accent">{totalIncome}₽</p>
             </div>
 
-            {/* Stats Grid */}
+            {/* Stats */}
             <div className="grid grid-cols-2 gap-3 animate-fade-in">
               <StatCard label="Аккаунтов" value={totalAccounts} />
               <StatCard label="Сдаются" value={activeRentals} color="text-success" />
-              <StatCard label="Арендовано" value={accounts.filter(a => a.total_rentals > 0).reduce((s, a) => s + a.total_rentals, 0)} />
+              <StatCard label="Аренд" value={totalRentals} />
               <StatCard label="Заработано" value={`${totalIncome}₽`} color="text-accent" />
             </div>
 
@@ -209,7 +252,7 @@ export default function SellerPage() {
                             <p className="text-[11px] text-accent mt-0.5">{acc.price_per_hour}₽/час · {acc.rank}</p>
                           </div>
                           <span className={`text-[10px] font-medium px-2 py-0.5 rounded-full ${st.color} ${st.bg} shrink-0 ml-2`}>
-                            {acc.is_rented ? '🔴 В аренде' : '🟢 Доступен'}
+                            {acc.is_rented ? 'В аренде' : 'Доступен'}
                           </span>
                         </div>
                         {acc.is_rented && acc.active_rental && (
