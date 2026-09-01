@@ -1,5 +1,5 @@
 import type { Account, Rental } from '../types'
-import { fetchAllUsers, updateUserLevel, fetchModeration, approveAccount, rejectAccount, fetchMyAccounts, createRental, extendRental, completeRental, fetchAllRentals } from './server'
+import { fetchAllUsers, updateUserLevel, fetchModeration, approveAccount, rejectAccount, fetchMyAccounts, adminCreateRental, extendRental, completeRental, fetchAllRentals } from './server'
 
 export type BotUser = {
   id: string; first_name: string; last_name: string; username: string; role: string; level: number; created_at: string; last_seen: string;
@@ -7,7 +7,7 @@ export type BotUser = {
 }
 
 export { fetchModeration, approveAccount as adminApproveListing, rejectAccount as adminRejectListing }
-export { fetchMyAccounts, createRental as adminCreateOrder, extendRental as adminExtendOrder, completeRental as adminCompleteOrder }
+export { fetchMyAccounts, adminCreateRental as adminCreateOrder, extendRental as adminExtendOrder, completeRental as adminCompleteOrder }
 export { fetchAllRentals as adminGetOrders }
 
 export async function adminGetUsers(): Promise<BotUser[]> {

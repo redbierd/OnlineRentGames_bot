@@ -339,6 +339,46 @@ app.post('/api/rentals', requireAuth, (req, res) => {
   res.status(201).json(rental)
 })
 
+// Admin: create rental for any user
+app.post('/api/admin/rentals', requireAdmin, (req, res) => {
+  const { user_id, account_id, hours } = req.body
+  if (!user_id || !account_id || !hours) return res.status(400).json({ error: 'Missing fields' })
+
+  const accounts = load(ACCOUNTS_FILE)
+  const acc = accounts.find(a => a.id === Number(account_id))
+  if (!acc) return res.status(404).json({ error: 'Account not found' })
+  if (acc.status !== 'available') return res.status(400).json({ error: 'Account not available' })
+
+  acc.status = 'rented'
+  save(ACCOUNTS_FILE, accounts)
+
+  const rentals = load(RENTALS_FILE)
+  const rental = {
+    id: rentals.length ? Math.max(...rentals.map(r => r.id)) + 1 : 1,
+    account_id: acc.id,
+    owner_id: acc.owner_id || '',
+    renter_id: String(user_id),
+    renter_username: '',
+    game_id: acc.game_id,
+    game_name: acc.game_name || '',
+    account_title: acc.title,
+    hours: Number(hours),
+    price: Math.ceil(acc.price_per_hour * hours),
+    status: 'active',
+    started_at: new Date().toISOString(),
+    expires_at: new Date(Date.now() + hours * 3600000).toISOString(),
+    created_at: new Date().toISOString(),
+    ten_min_warning: false,
+    payment_source: 'admin',
+  }
+  rentals.push(rental)
+  save(RENTALS_FILE, rentals)
+
+  bot.sendMessage(String(user_id), `✅ Вам выдана аренда!\n\n🎮 ${acc.game_name || ''}\n💼 ${acc.title}\n\n⏱ ${hours}ч`).catch(() => {})
+
+  res.status(201).json(rental)
+})
+
 // Extend rental
 app.post('/api/rentals/:id/extend', requireAuth, (req, res) => {
   const { hours } = req.body

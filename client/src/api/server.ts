@@ -118,6 +118,15 @@ export async function createRental(accountId: number, hours: number): Promise<an
   return res.json()
 }
 
+export async function adminCreateRental(userId: string, accountId: number, hours: number): Promise<any> {
+  const res = await fetch(`${API_BASE}/admin/rentals`, { method: 'POST', headers: headers({ 'x-admin': '1' }), body: JSON.stringify({ user_id: userId, account_id: accountId, hours }) })
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}))
+    throw new Error(err.error || 'Failed')
+  }
+  return res.json()
+}
+
 export async function extendRental(rentalId: number, hours: number): Promise<any> {
   const res = await fetch(`${API_BASE}/rentals/${rentalId}/extend`, { method: 'POST', headers: headers(), body: JSON.stringify({ hours }) })
   if (!res.ok) throw new Error('Failed')
